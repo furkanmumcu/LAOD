@@ -1,5 +1,18 @@
-/__pycache__
-/.idea
+# Credentials — never committed
+.env
 
+# Data and models: downloaded, not versioned. See README.
+datasets/
+weights/
 
+# Experiment artefacts: regenerated, not versioned.
+outputs/
+figures/
+reports/
 
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.idea/
+.vscode/

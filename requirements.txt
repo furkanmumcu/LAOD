@@ -1,0 +1,16 @@
+# Core evaluation (metrics + standalone scoring). CPU-only is sufficient
+# for CAAP; SNAP needs torch for the CLIP text encoder.
+numpy>=1.24
+tqdm>=4.65
+torch>=2.0
+ftfy>=6.0
+regex
+clip @ git+https://github.com/openai/CLIP.git      # legacy SNAP backend
+transformers>=4.50                                  # hf SNAP backend + LLM agents
+pycocotools>=2.0.6
+lvis>=0.5.3
+Pillow>=9.0
+ultralytics>=8.3                                    # YOLO-World detector
+
+# Dev
+pytest>=7.0
