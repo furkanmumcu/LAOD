@@ -1,0 +1,15 @@
+llm,detector,dataset,cut,det_per_img,caap,f1,precision,recall
+qwen35-9b,yolo-world,coco,0.001,88.98,0.303,0.177,0.0995,0.8031
+qwen35-9b,yolo-world,coco,0.005,42.94,0.3003,0.2545,0.1525,0.7673
+qwen35-9b,yolo-world,coco,0.01,30.84,0.2974,0.3043,0.1916,0.7402
+qwen35-9b,yolo-world,coco,0.02,22.29,0.2925,0.3611,0.2428,0.7047
+qwen35-9b,yolo-world,coco,0.03,18.37,0.2883,0.3954,0.2791,0.6782
+qwen35-9b,yolo-world,coco,0.05,14.49,0.2816,0.434,0.3286,0.6391
+qwen35-9b,yolo-world,coco,0.075,11.93,0.2735,0.4593,0.3718,0.6007
+qwen35-9b,yolo-world,coco,0.1,10.38,0.2657,0.4721,0.403,0.5698
+qwen35-9b,yolo-world,coco,0.15,8.42,0.2515,0.4765,0.445,0.5127
+qwen35-9b,yolo-world,coco,0.2,7.2,0.2384,0.4729,0.4761,0.4697
+qwen35-9b,yolo-world,coco,0.25,6.3,0.2266,0.4673,0.5041,0.4356
+qwen35-9b,yolo-world,coco,0.3,5.61,0.2179,0.4601,0.5291,0.4071
+qwen35-9b,yolo-world,coco,0.4,4.55,0.1996,0.4419,0.5752,0.3587
+qwen35-9b,yolo-world,coco,0.5,3.75,0.1836,0.4158,0.6122,0.3148

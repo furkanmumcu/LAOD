@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "regression: pins published numbers to archived predictions (needs datasets/)",
+    "gpu: requires CUDA and a CLIP checkpoint",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
