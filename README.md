@@ -70,30 +70,37 @@ python run_benchmark.py --dataset coco --split test --split_size 8 \
     --llm qwen35-9b --detector yolo-world --evaluate
 ```
 
-Render predictions and ground truth side by side:
-
-```bash
-python scripts/render_detections.py \
-    --run outputs/runs/coco-test__qwen35-9b__yolo-world__default \
-    --images 413247 --score 0.25
-python scripts/render_ground_truth.py --dataset coco --images 413247
-```
+Each run writes every box, score and label to
+`outputs/runs/<dataset>-<split>__<llm>__<detector>__<prompt>/`, so predictions
+can be inspected or re-scored without re-running anything.
 
 ## Reproducing the paper
 
 See **[REPRODUCE.md](REPRODUCE.md)** for the full protocol. Each paper result
 maps to one command:
 
-| paper | command |
-|---|---|
-| Fig. 3 — CAAP/SNAP, 28 MLLM x detector cells on COCO-Val | `run_benchmark.py --dataset coco` then `scripts/maxdets_compare.py` |
-| LVIS-minival | `--dataset lvis` |
-| COCO-OOD, U-AP/U-F1/U-PRE/U-REC | `--dataset coco_ood` then `scripts/uap_pipeline_ood.py` |
-| Tables 8, 10 — SemLoc-AP threshold marginals | `scripts/semloc_all.py` then `scripts/build_semloc_report.py` |
-| MLLMs as direct detectors | `scripts/run_vlm_detect.py` |
-| Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` |
-| Fig. 6 — qualitative | `scripts/pick_qualitative.py`, then the two render scripts |
-| Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) |
+**This repository produces numbers, not plots.** The paper's grid figures
+(Figs. 3–5) are a rendering of one value per MLLM x detector cell; those values
+are what the commands below write, as CSV and as markdown grid tables. No
+plotting or image-rendering code ships here.
+
+| paper | command | output |
+|---|---|---|
+| Fig. 3 — CAAP/SNAP, 28 cells on COCO-Val | `run_benchmark.py --dataset coco` then `scripts/maxdets_compare.py` | `results/main_coco.csv`, one row per cell |
+| Fig. 4 — LVIS-minival | `--dataset lvis` | `results/main_lvis.csv` |
+| Fig. 5 — COCO-OOD | `--dataset coco_ood` then `scripts/uap_pipeline_ood.py` | `results/main_coco_ood.csv`, `results/phase4_uap_coco_ood.csv` |
+| Tables 6–7, 9 — threshold-wise CAAP/SNAP | `scripts/snap_sbert_all.py` | `results/snap_sbert.csv` |
+| Tables 8, 10 — SemLoc-AP marginals | `scripts/semloc_all.py` then `scripts/build_semloc_report.py` | `results/semloc.csv`, `results/semloc_matrices.json` |
+| Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` | `results/snap_sbert.csv` (`stage2`) |
+| Table 2, 12 — unknown-object detection | `scripts/uap_pipeline_ood.py` | `results/phase4_uap_coco_ood.csv` |
+| MLLMs as direct detectors | `scripts/run_vlm_detect.py` then `scripts/rescore_vlm.py` | `results/phase3_vlm_*.csv` |
+| Tables 19–20 — refinement loop and its controls | `scripts/run_vocab_feedback.py`, then `scripts/selective_refinement*.py` | `results/feedback_dev/`, `results/selective_refinement/` |
+| Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` | `results/threshold_cost.csv` |
+| Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh` then `scripts/eval_fixed_ontology.py` | `results/fixed_ontology/` |
+| Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) | — |
+
+The paper's qualitative figures (Figs. 6, 8) are rendered images, not
+measurements; the predictions behind them are in the run directories.
 | Tables 19–20 — refinement loop and its controls | `scripts/run_vocab_feedback.py`, then `scripts/selective_refinement*.py` |
 | Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` |
 | Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh`, then `scripts/eval_fixed_ontology.py` |
@@ -178,7 +185,7 @@ it to four decimals.
 
 ```
 laod/            the package: metrics, data, models, IO, visualisation
-scripts/         tuning, scoring, report and figure generation
+scripts/         tuning, scoring and report generation
 tests/           148 tests
 results/         frozen splits + our output tables
 run_benchmark.py       generate vocabularies and ground them

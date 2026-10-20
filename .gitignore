@@ -7,7 +7,6 @@ weights/
 
 # Experiment artefacts: regenerated, not versioned.
 outputs/
-figures/
 reports/
 
 __pycache__/

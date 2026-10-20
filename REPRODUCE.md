@@ -200,25 +200,27 @@ python scripts/report_stage.py --pattern "coco-test-ablation__*" --stage stage2 
 bash scripts/run_lvis_prompt_ablation.sh
 ```
 
-## 6. Figures and reports
+## 6. Reports
 
 ```bash
-python scripts/pick_qualitative.py --dataset coco --n 10        # choose images
-python scripts/render_detections.py --run outputs/runs/... --images <ids> --score 0.25
-python scripts/render_ground_truth.py --dataset coco --images <ids>
-
-python scripts/build_final_report.py        # reports/RESULTS.md
-python scripts/build_intervals_report.py    # reports/INTERVALS.md  (LO/MI/HI + SemLoc marginals)
-python scripts/build_semloc_report.py       # reports/SEMLOC.md     (per-cell 10x10 matrices)
+python scripts/build_final_report.py        # reports/RESULTS.md     (per-cell grid tables)
+python scripts/build_intervals_report.py    # reports/INTERVALS.md   (LO/MI/HI + SemLoc marginals)
+python scripts/build_semloc_report.py       # reports/SEMLOC.md      (per-cell 10x10 matrices)
 python scripts/build_prompt_report.py       # reports/PROMPTS.md
 python scripts/audit_reports.py             # verifies tables against their sources
-python -m scripts.figures                   # all figures
 ```
+
+**No plotting or image-rendering code ships here.** The paper's grid figures
+are a rendering of one value per MLLM x detector cell; `build_final_report.py`
+emits exactly those values as markdown grid tables, and `results/main_*.csv`
+holds them one row per cell. The qualitative figures are rendered images rather
+than measurements — the predictions behind them are in the run directories,
+where every box, score and label is stored.
 
 `audit_reports.py` checks the generated reports against the CSVs they were
 built from and the conventions against the code — evaluator defaults, grid
 equality, every table value against its source. It exits non-zero on failure.
-Nine sections, 48 checks, including that SemLoc-AP's two axes are still the
+Nine sections, 66 checks, including that SemLoc-AP's two axes are still the
 CAAP and SNAP grids, that no `snap*` column survives on COCO-OOD, and that no
 stale CLIP SNAP value appears in any report.
 
