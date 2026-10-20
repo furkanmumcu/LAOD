@@ -53,7 +53,7 @@ from laod.data.base import DetectionImageDataset, build_dataloader
 from laod.io.label_cache import LabelCache
 from laod.io.run_store import ImageRecord, RunConfig, RunStore, file_digest
 from laod.models.label_parser import parse_labels
-from laod.models.registry import (ACTIVE_LLMS, DETECTOR_PRESETS, DETECTORS,
+from laod.models.registry import (ACTIVE_LLMS, DETECTORS,
                                    LLMS, PROMPTS, DEFAULT_PROMPT,
                                    detector_params)
 
@@ -96,10 +96,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stage", choices=["labels", "detect", "all"], default="all")
     p.add_argument("--batch_size", type=int, default=8)
     p.add_argument("--num_workers", type=int, default=4)
-    p.add_argument("--parse_mode", choices=["strict", "legacy"], default="strict")
-    p.add_argument("--detector_preset", choices=DETECTOR_PRESETS, default="v2",
-                   help="'legacy' reproduces the original's inherited thresholds; "
-                        "'v2' uses the measured per-detector CAAP optimum")
     p.add_argument("--max_new_tokens", type=int, default=256)
     p.add_argument("--do_sample", action="store_true",
                    help="restore the original's sampling; makes runs unreproducible")
@@ -148,7 +144,7 @@ def stage_labels(args, gt, dataset, llms: list[str]) -> dict[str, LabelCache]:
                 except Exception:
                     logger.exception("generation failed for image %s", item["image_id"])
                     raw = ""
-                parsed = parse_labels(raw, args.parse_mode)
+                parsed = parse_labels(raw)
                 parsed.flags["llm_seconds"] = round(time.time() - t0, 3)
                 cache.put(item["image_id"], parsed)
                 bar.update(1)
@@ -175,7 +171,7 @@ def stage_detect(args, gt, dataset, llms: list[str], detectors: list[str]) -> li
     for det_key in detectors:
         from laod.models.detector import build_detector
         detector = build_detector(det_key, device=args.device,
-                                  **detector_params(det_key, args.detector_preset))
+                                  **detector_params(det_key))
         spec = DETECTORS[det_key]
 
         stores = {}
@@ -183,12 +179,12 @@ def stage_detect(args, gt, dataset, llms: list[str], detectors: list[str]) -> li
             cfg = RunConfig(
                 dataset=f"{args.dataset}-{args.split}" + (f"-{args.subset}" if args.subset else ""), llm=llm_key, detector=det_key, prompt=args.prompt,
                 llm_model_id=LLMS[llm_key].model_id, detector_model_id=spec.model_id,
-                parse_mode=args.parse_mode, split_size=args.split_size,
+                parse_mode="strict", split_size=args.split_size,
                 detector_params=dict(detector.params),
                 generation_params={"max_new_tokens": args.max_new_tokens,
                                    "do_sample": args.do_sample},
                 annotation_file=str(ann_path), annotation_md5=ann_md5,
-                notes=f"split={args.split}; detector_preset={args.detector_preset}",
+                notes=f"split={args.split}",
             )
             stores[llm_key] = RunStore(out_root, cfg, resume=not args.no_resume)
 
@@ -243,12 +239,12 @@ def evaluate_run(run_dir: Path, gt, device: str = "cuda:1",
     """Score one stored run with CAAP and, where defined, SNAP."""
     from laod.io.run_store import run_to_predictions
     from laod.metrics.caap import CAAPEvaluator
-    from laod.metrics.grids import CAAP_V2, SNAP_LEGACY
+    from laod.metrics.grids import CAAP, SNAP
 
     preds = run_to_predictions(run_dir)
     print(f"\n=== {run_dir.name} ===")
-    res = CAAPEvaluator(gt, CAAP_V2.all_thresholds).evaluate(preds)
-    s = CAAP_V2.summarise(res.per_threshold)
+    res = CAAPEvaluator(gt, CAAP.all_thresholds).evaluate(preds)
+    s = CAAP.summarise(res.per_threshold)
     print(f"CAAP  LO {s['LO']:.4f}  MI {s['MI']:.4f}  HI {s['HI']:.4f}  "
           f"50:95 {s['MACRO']:.4f}")
     if not has_semantic_labels(dataset):
@@ -258,7 +254,7 @@ def evaluate_run(run_dir: Path, gt, device: str = "cuda:1",
     try:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
         snap = SNAPEvaluator(gt, TextEmbedder(device=device),
-                             grid=SNAP_LEGACY).evaluate(preds)
+                             grid=SNAP).evaluate(preds)
         print(snap.report())
     except Exception as exc:
         logger.warning("SNAP skipped: %s", exc)
@@ -279,8 +275,9 @@ def main(argv: list[str] | None = None) -> int:
     gt_all, dataset = LOADERS[args.dataset].load(split_size=args.split_size)
     gt = apply_split(gt_all, args.split)
     if args.split == "all":
-        logger.warning("--split all includes the tuning holdout; valid only for "
-                       "legacy reproduction, not for tuned (v2) numbers")
+        logger.warning("--split all includes the tuning holdout, on which the "
+                       "detector thresholds were fitted; not valid for any "
+                       "reported number")
     if args.subset == "ablation":
         # Each dataset has its own frozen draw: the prompt ablation is repeated
         # on LVIS to test whether a prompt tuned for one annotation scheme
@@ -292,9 +289,9 @@ def main(argv: list[str] | None = None) -> int:
                     args.dataset, len(gt))
     keep = {g.image_id for g in gt}
     dataset = DetectionImageDataset(gt, dataset.image_dir, file_names=dataset.file_names)
-    logger.info("dataset=%s split=%s images=%d/%d llms=%s detectors=%s prompt=%s preset=%s",
+    logger.info("dataset=%s split=%s images=%d/%d llms=%s detectors=%s prompt=%s",
                 args.dataset, args.split, len(gt), len(gt_all), llms, detectors,
-                args.prompt, args.detector_preset)
+                args.prompt)
 
     if args.stage in ("labels", "all"):
         stage_labels(args, gt, dataset, llms)

@@ -1,23 +1,13 @@
-"""Threshold grids for CAAP and SNAP.
+"""Threshold grids for CAAP, SNAP and SemLoc-AP.
 
-Both metrics summarise a sweep of thresholds into LO / MI / HI intervals plus a
+Each metric summarises a sweep of thresholds into LO / MI / HI intervals plus a
 macro average. Which thresholds those intervals contain is the single most
-consequential choice in either metric, so every variant is named and declared
-here rather than being spelled inline at call sites.
+consequential choice in any of them, so the grids are declared here rather than
+spelled inline at call sites.
 
-A note on the legacy grids, because they are surprising. The original scripts
-built intervals with ``np.arange(0.50, 0.65, 0.05)`` and friends. Floating point
-makes ``(0.65 - 0.50) / 0.05`` evaluate to 3.0000000000000004, so ``arange``
-rounds the length up and emits **four** values where the inline comments claimed
-three. Two consequences carried into the published table:
-
-* ``LO`` and ``MI`` overlap -- 0.65 is the last element of one and the first of
-  the other.
-* ``HI`` ends at 1.00, a threshold nothing can satisfy (CAAP@1.00 = 0.0001),
-  which pulls the published CAAP_HI from 0.1105 down to 0.0829.
-
-The ``*_LEGACY`` grids reproduce this faithfully; they are what regenerates the
-original paper's numbers. The ``*_V2`` grids are the corrected form.
+CAAP and SNAP share one interval structure -- the same three disjoint bands over
+ten thresholds from 0.50 to 0.95 -- so an interval means the same thing in both,
+and SemLoc-AP's two axes are exactly those two grids.
 """
 
 from __future__ import annotations
@@ -61,7 +51,7 @@ class Grid:
 
 
 def _arange(start: float, stop: float, step: float = 0.05) -> tuple[float, ...]:
-    """Reproduce the legacy ``np.arange`` call, float quirk included."""
+    """Half-open threshold range, e.g. ``(0.50, 1.00)`` -> 0.50 .. 0.95."""
     return tuple(key(x) for x in np.arange(start, stop, step))
 
 
@@ -69,18 +59,8 @@ def _arange(start: float, stop: float, step: float = 0.05) -> tuple[float, ...]:
 # CAAP
 # --------------------------------------------------------------------------
 
-CAAP_LEGACY = Grid(
-    name="legacy",
-    lo=_arange(0.50, 0.65),          # (0.50, 0.55, 0.60, 0.65)
-    mi=_arange(0.65, 0.85),          # (0.65, 0.70, 0.75, 0.80)
-    hi=_arange(0.85, 1.00),          # (0.85, 0.90, 0.95, 1.00)
-    macro=tuple(key(x) for x in np.arange(0.50, 1.00, 0.05)),
-    note="Reproduces the original paper's Table 1 exactly, overlapping LO/MI "
-         "boundary and unreachable IoU=1.00 in HI included.",
-)
-
-CAAP_V2 = Grid(
-    name="v2",
+CAAP = Grid(
+    name="caap",
     lo=(0.50, 0.55, 0.60),
     mi=(0.65, 0.70, 0.75, 0.80),
     hi=(0.85, 0.90, 0.95),
@@ -93,31 +73,24 @@ CAAP_V2 = Grid(
 # SNAP
 # --------------------------------------------------------------------------
 
-SNAP_LEGACY = Grid(
-    name="legacy",
-    lo=_arange(0.50, 0.65),
-    mi=_arange(0.65, 0.85),
-    hi=_arange(0.85, 1.00),
-    macro=_arange(0.50, 1.00),
-    note="The original SNAP reused the CAAP IoU arrays as cosine thresholds. "
-         "On raw CLIP text embeddings every threshold at or below 0.65 admits "
-         "~100%% of unrelated label pairs, so LO and MI are not measuring "
-         "naming. Kept for reproduction only.",
-)
-
-SNAP_DISJOINT = Grid(
-    name="disjoint",
+SNAP = Grid(
+    name="snap",
     lo=(0.50, 0.55, 0.60),
     mi=(0.65, 0.70, 0.75, 0.80),
     hi=(0.85, 0.90, 0.95),
     macro=_arange(0.50, 1.00),
-    note="The legacy thresholds with its three construction defects removed: "
-         "LO holds three values rather than four, LO and MI no longer overlap "
-         "at 0.65, and HI drops tau=1.00. That last one matters most -- it "
-         "requires near-identical embeddings, scores ~0.03 against 0.19-0.24 "
-         "for the rest of HI, and deflates every SNAP_HI by about 22%%. The "
-         "threshold values themselves are unchanged, so the intervals keep "
-         "their intuitive reading.",
+    note="The SNAP grid. Ten cosine thresholds, 0.50 to 0.95, summarised into "
+         "three disjoint intervals -- the same values and the same reading as "
+         "the CAAP IoU grid, so the two metrics are directly comparable "
+         "interval by interval.\n\n"
+         "The original implementation derived these from np.arange and "
+         "inherited its float quirk: LO held four values rather than three, "
+         "LO and MI both contained 0.65, and HI ran to tau=1.00, which "
+         "requires near-identical embeddings and deflated every SNAP_HI by "
+         "about 22%%. Those three defects are fixed here. The macro average "
+         "never included 1.00, so it is unaffected -- only the interval "
+         "columns differ from the original, and every published number uses "
+         "this grid.",
 )
 
 SNAP_YEN = Grid(
@@ -134,8 +107,8 @@ SNAP_YEN = Grid(
 # laod.metrics.snap.calibrate_thresholds to derive them elsewhere.
 SNAP_V2_TARGET_FMR = {"LO": 0.05, "MI": 0.01, "HI": 0.001}
 
-SNAP_V2_COCO = Grid(
-    name="v2",
+SNAP_CALIBRATED = Grid(
+    name="calibrated",
     lo=(0.20,), mi=(0.38,), hi=(0.55,),
     macro=(0.20, 0.38, 0.55),
     note="Mean-centred embeddings, thresholds calibrated to 5%% / 1%% / 0.1%% "
@@ -143,7 +116,6 @@ SNAP_V2_COCO = Grid(
          "calibrate_thresholds() rather than reusing these numbers.",
 )
 
-CAAP_GRIDS: dict[str, Grid] = {g.name: g for g in (CAAP_LEGACY, CAAP_V2)}
+CAAP_GRIDS: dict[str, Grid] = {g.name: g for g in (CAAP,)}
 SNAP_GRIDS: dict[str, Grid] = {g.name: g for g in
-                               (SNAP_LEGACY, SNAP_DISJOINT, SNAP_YEN,
-                                SNAP_V2_COCO)}
+                               (SNAP, SNAP_YEN, SNAP_CALIBRATED)}

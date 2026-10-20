@@ -56,7 +56,7 @@ def main() -> int:
     gt = {g.image_id: g for g in apply_split(
         load_ground_truth(getattr(PATHS, ANN[args.dataset]), args.dataset), "test")}
     _, recs = load_run(
-        f"outputs/runs/{args.dataset}-test__{args.llm}__{args.detector}__original")
+        f"outputs/runs/{args.dataset}-test__{args.llm}__{args.detector}__default")
     rarity = lvis_rarity() if args.dataset == "lvis" else {}
 
     cand = []

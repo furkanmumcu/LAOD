@@ -40,7 +40,7 @@ from laod.data.splits import apply_split, load_ablation_subset
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import ImageRecord, RunConfig, RunStore, file_digest
 from laod.metrics.caap import CAAP_ALL, CAAPEvaluator
-from laod.metrics.grids import SNAP_LEGACY
+from laod.metrics.grids import SNAP
 from laod.metrics.uap import UAPEvaluator
 from laod.models.vlm_detector import GROUNDING_PROMPT, QwenVLDetector, parse_detections
 
@@ -176,7 +176,7 @@ def main() -> int:
     else:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
         sev = SNAPEvaluator(gt, TextEmbedder(device=args.device),
-                            grid=SNAP_LEGACY)
+                            grid=SNAP)
 
     rows = []
     for src in SOURCES:

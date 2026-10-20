@@ -45,7 +45,7 @@ def main() -> int:
     # file names live in the run store, which is the only place image id ->
     # file name is recorded for every split
     _, recs = load_run(
-        f"outputs/runs/{args.dataset}-test__qwen35-9b__yolo-world__original")
+        f"outputs/runs/{args.dataset}-test__qwen35-9b__yolo-world__default")
     names = {r.image_id: r.file_name for r in recs}
 
     os.makedirs(out_dir, exist_ok=True)

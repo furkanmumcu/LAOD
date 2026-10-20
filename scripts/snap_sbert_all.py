@@ -8,11 +8,9 @@ and SNAP_MI therefore score identically under randomly shuffled labels.
 MiniLM, trained contrastively for sentence similarity, puts unrelated COCO
 pairs at a median of +0.274 and admits 2% at the same threshold.
 
-Thresholds come from ``SNAP_DISJOINT``: the same 0.50-0.95 values as before,
-with the legacy grid's three construction defects removed -- LO holds three
-values rather than four, LO and MI no longer both contain 0.65, and HI drops
-tau=1.00, which needs near-identical embeddings and deflated every SNAP_HI by
-about 22%.
+Thresholds come from ``SNAP``, the one SNAP grid: ten values from 0.50 to
+0.95 in three disjoint intervals, matching the CAAP grid so an interval means
+the same thing in both metrics.
 
 The label-shuffle control is scored alongside every cell, because the value
 alone cannot show whether a threshold is doing anything: only the gap to its
@@ -40,7 +38,7 @@ from laod.data.annotations import load_ground_truth
 from laod.data.splits import (ABLATION_LVIS_PATH, apply_split,
                               load_ablation_subset)
 from laod.io.run_store import load_run
-from laod.metrics.grids import SNAP_DISJOINT
+from laod.metrics.grids import SNAP
 from laod.metrics.snap import SNAPEvaluator, TextEmbedder
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
@@ -96,7 +94,7 @@ def main() -> int:
                 gt = [g for g in gt if g.image_id in sub]
             gt_cache[key] = gt
         gt = gt_cache[key]
-        ev = SNAPEvaluator(gt, emb, grid=SNAP_DISJOINT)
+        ev = SNAPEvaluator(gt, emb, grid=SNAP)
 
         print(f"\n=== {stage} | {dataset} | {len(dirs)} runs | "
               f"{len(gt)} images ===")
@@ -109,9 +107,9 @@ def main() -> int:
             s = res.summary()
             chance = {k: float(np.mean([res.chance.get(round(t, 4), np.nan)
                                         for t in taus]))
-                      for k, taus in (("LO", SNAP_DISJOINT.lo),
-                                      ("MI", SNAP_DISJOINT.mi),
-                                      ("HI", SNAP_DISJOINT.hi))}
+                      for k, taus in (("LO", SNAP.lo),
+                                      ("MI", SNAP.mi),
+                                      ("HI", SNAP.hi))}
             macro_chance = float(np.mean([v for t, v in res.chance.items()
                                           if t <= 0.95]))
             rows.append(dict(

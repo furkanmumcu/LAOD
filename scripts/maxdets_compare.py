@@ -27,7 +27,7 @@ from laod.data.splits import apply_split
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_V2, SNAP_LEGACY
+from laod.metrics.grids import CAAP, SNAP
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
 
@@ -68,7 +68,7 @@ def main() -> int:
 
     gt = apply_split(load_ground_truth(getattr(PATHS, ANN[args.dataset]),
                                        args.dataset), "test")
-    ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
+    ev = CAAPEvaluator(gt, CAAP.all_thresholds)
     sev = None
     if args.snap and not has_semantic_labels(args.dataset):
         # Skipped rather than scored as zero, and skipped rather than refused.
@@ -80,7 +80,7 @@ def main() -> int:
               f"No snap* columns will be written.\n")
     elif args.snap:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
-        sev = SNAPEvaluator(gt, TextEmbedder(device=args.device), grid=SNAP_LEGACY)
+        sev = SNAPEvaluator(gt, TextEmbedder(device=args.device), grid=SNAP)
     dirs = sorted(d for d in glob.glob(pattern) if os.path.isdir(d))
     print(f"{len(gt)} images | {sum(len(g) for g in gt)} objects | "
           f"{len(dirs)} cells | cap {args.max_dets}\n")
@@ -94,12 +94,12 @@ def main() -> int:
     for d in dirs:
         cfg, recs = load_run(d)
         n_raw = sum(len(r.scores) for r in recs) / max(len(recs), 1)
-        full_s = CAAP_V2.summarise(
+        full_s = CAAP.summarise(
             ev.evaluate(capped(recs, None), progress=False).per_threshold)
         full = full_s["MACRO"]
         cap = capped(recs, args.max_dets)
         n_cap = sum(len(p.scores) for p in cap) / max(len(cap), 1)
-        cap_s = CAAP_V2.summarise(ev.evaluate(cap, progress=False).per_threshold)
+        cap_s = CAAP.summarise(ev.evaluate(cap, progress=False).per_threshold)
         capped_caap = cap_s["MACRO"]
         delta = (capped_caap / full - 1) * 100
         row = dict(llm=cfg.llm, detector=cfg.detector, dataset=args.dataset,

@@ -4,17 +4,10 @@
 This is the reproducibility entry point: anyone holding detection outputs can
 reproduce or contest the published numbers without re-running an LLM.
 
-Examples:
-    # reproduce the original paper's COCO-Val row from the archived dumps
-    python eval_metrics_only.py \\
-        --predictions_file reference/original_runs/coco_ours_results \\
-        --legacy_npy --snap_grid legacy --caap_grid legacy
-
-    # score your own predictions with the calibrated metric
+Example:
     python eval_metrics_only.py \\
         --predictions_file outputs/preds.json \\
-        --annotation_file datasets/annotations/instances_val2017.json \\
-        --snap_grid v2 --center
+        --annotation_file datasets/annotations/instances_val2017.json
 """
 
 from __future__ import annotations
@@ -31,7 +24,7 @@ _PINNED = pin_from_argv()
 
 from laod.config import PATHS
 from laod.data.annotations import has_semantic_labels, load_ground_truth
-from laod.io.predictions import load_legacy_npy, load_predictions
+from laod.io.predictions import load_predictions
 from laod.metrics.caap import CAAPEvaluator
 from laod.metrics.grids import CAAP_GRIDS, SNAP_GRIDS, SNAP_V2_TARGET_FMR
 
@@ -50,9 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     src = p.add_argument_group("inputs")
     src.add_argument("--predictions_file", required=True, type=Path,
-                     help="predictions JSON, or a directory of legacy .npy dumps")
-    src.add_argument("--legacy_npy", action="store_true",
-                     help="read predictions_file as an all_gt/all_dt .npy pair")
+                     help="predictions JSON")
     src.add_argument("--annotation_file", type=Path, default=None,
                      help="COCO-format annotations; defaults to the dataset's file")
     src.add_argument("--dataset", choices=sorted(ANNOTATION_DEFAULTS), default="coco")
@@ -60,8 +51,8 @@ def build_parser() -> argparse.ArgumentParser:
                      help="evaluate only the first N images (pilot subsets)")
 
     m = p.add_argument_group("metrics")
-    m.add_argument("--caap_grid", choices=sorted(CAAP_GRIDS), default="legacy")
-    m.add_argument("--snap_grid", choices=sorted(SNAP_GRIDS), default="legacy")
+    m.add_argument("--caap_grid", choices=sorted(CAAP_GRIDS), default="caap")
+    m.add_argument("--snap_grid", choices=sorted(SNAP_GRIDS), default="snap")
     m.add_argument("--no_caap", action="store_true")
     m.add_argument("--no_snap", action="store_true")
     m.add_argument("--match_order", choices=["given", "score"], default="given",
@@ -102,11 +93,6 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("nothing to do: both metrics disabled")
         return 2
 
-    if args.legacy_npy:
-        ann = args.annotation_file or ANNOTATION_DEFAULTS[args.dataset]()
-        names = {c["id"]: c["name"]
-                 for c in json.loads(Path(ann).read_text())["categories"]}
-        gt, preds = load_legacy_npy(args.predictions_file, category_names=names)
     else:
         preds, meta = load_predictions(args.predictions_file)
         ann = args.annotation_file or ANNOTATION_DEFAULTS[args.dataset]()

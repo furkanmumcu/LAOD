@@ -21,10 +21,10 @@ class TestLabelParser:
         p = parse_labels("Person,  Chair , TV", "strict")
         assert p.labels == ["person", "chair", "tv"]
 
-    def test_legacy_mode_preserves_the_original_defect(self):
-        """The original never stripped or cased; reproduction needs that back."""
-        p = parse_labels("Person, Chair", "legacy")
-        assert p.labels == ["Person", " Chair"]
+    def test_unknown_mode_is_rejected(self):
+        """There is one parse mode. A typo must fail loudly, not fall back."""
+        with pytest.raises(ValueError, match="unknown parse mode"):
+            parse_labels("Person, Chair", "nonsense")
 
     def test_duplicates_are_dropped_and_counted(self):
         p = parse_labels("book, book, pen", "strict")
@@ -325,16 +325,12 @@ class TestDetectorPresets:
     each detector on 100 COCO images against a fixed label set.
     """
 
-    def test_legacy_preserves_the_original_thresholds(self):
+    def test_unmeasured_parameters_are_still_declared(self):
+        """text_threshold was never tuned but must still be supplied."""
         from laod.models.registry import detector_params
-        assert detector_params("yolo-world", "legacy") == {"conf": 0.25}
-        assert detector_params("gdino-tiny", "legacy")["score_threshold"] == 0.4
-
-    def test_v2_overrides_only_what_was_measured(self):
-        from laod.models.registry import detector_params
-        v2 = detector_params("gdino-tiny", "v2")
-        assert v2["score_threshold"] == 0.03
-        assert v2["text_threshold"] == 0.3, "unmeasured params carry over"
+        p = detector_params("gdino-tiny")
+        assert p["score_threshold"] == 0.03
+        assert p["text_threshold"] == 0.3
 
     def test_every_detector_sits_at_its_grid_floor(self):
         """Under maxDets the cap thresholds, not the confidence cut.
@@ -351,18 +347,12 @@ class TestDetectorPresets:
                   "gdino-base": ("score_threshold", 0.03),
                   "owlv2-base": ("score_threshold", 0.01)}
         for key, (param, want) in floors.items():
-            assert detector_params(key, "v2")[param] == want, key
+            assert detector_params(key)[param] == want, key
 
-    def test_unknown_preset_is_rejected(self):
-        from laod.models.registry import detector_params
-        with pytest.raises(ValueError, match="unknown detector preset"):
-            detector_params("yolo-world", "nonsense")
-
-    def test_every_detector_declares_both_presets(self):
+    def test_every_detector_declares_a_threshold(self):
         from laod.models.registry import DETECTORS, detector_params
         for key in DETECTORS:
-            assert detector_params(key, "legacy")
-            assert detector_params(key, "v2")
+            assert detector_params(key)
 
 
 class TestHoldoutSplit:

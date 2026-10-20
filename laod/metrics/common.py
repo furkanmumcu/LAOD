@@ -20,7 +20,8 @@ MatchOrder = Literal["given", "score"]
 # The original implementation added this to precision and recall denominators.
 # Reproducing its published numbers requires keeping it; it is exposed rather
 # than buried so the choice is visible at the call site.
-LEGACY_EPS = 1e-8
+#: Tie tolerance when comparing scores while ranking detections.
+AP_EPS = 1e-8
 
 
 def show_progress(requested: bool = True) -> bool:
@@ -111,7 +112,7 @@ def pr_curve(
     flags: Sequence[bool] | np.ndarray,
     n_gt: int,
     *,
-    eps: float = LEGACY_EPS,
+    eps: float = AP_EPS,
     recall_eps: float = 0.0,
 ) -> PRCurve:
     """Build the precision-recall curve from dataset-wide ranked detections.
@@ -163,7 +164,7 @@ def average_precision(
     flags: Sequence[bool] | np.ndarray,
     n_gt: int,
     *,
-    eps: float = LEGACY_EPS,
+    eps: float = AP_EPS,
     recall_eps: float = 0.0,
 ) -> float:
     """Convenience wrapper: ranked detections in, 101-point AP out."""

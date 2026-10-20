@@ -142,29 +142,22 @@ three intervals the original paper reports.*
 
 ## The intervals
 
-The original implementation builds its thresholds with `np.arange`, and the
-result is not what its prose describes. Both grids are reproduced exactly as
-that code computed them, because the published table only regenerates this way:
+CAAP and SNAP share one set of intervals:
 
 | | LO | MI | HI |
 |---|---|---|---|
-| **reported** (CAAP and SNAP) | 0.50, 0.55, 0.60 | 0.65, 0.70, 0.75, 0.80 | 0.85, 0.90, 0.95 |
-| *original implementation* | 0.50, 0.55, 0.60, 0.65 | 0.65, 0.70, 0.75, 0.80 | 0.85, 0.90, 0.95, 1.00 |
+| CAAP (IoU) and SNAP (cosine) | 0.50, 0.55, 0.60 | 0.65, 0.70, 0.75, 0.80 | 0.85, 0.90, 0.95 |
 
-The original grid is built with `np.arange` and carries three defects, all
-fixed in the reported one:
+They are disjoint and every threshold is attainable. Neither property is
+automatic: an earlier implementation built these with `np.arange`, where
+`(0.65 - 0.50) / 0.05` evaluates to `3.0000000000000004` and the extra element
+put 0.65 in both `LO` and `MI` while `HI` ran to 1.00 — a threshold no
+predicted box attains, contributing ~0.0001 and dragging the interval down.
 
-1. **`LO` holds four values, not the three the paper describes.**
-   `(0.65 - 0.50) / 0.05` evaluates to `3.0000000000000004` in floating point,
-   so `arange` emits an extra element.
-2. **`LO` and `MI` overlap at 0.65**, which is therefore counted twice.
-3. **`HI` includes IoU = 1.00**, which no predicted box attains — it
-   contributes ~0.0001 and drags the interval down.
-
-**The macro is not the mean of the three intervals.** It is the unweighted mean
-over the ten thresholds 0.50 … 0.95, excluding 1.00 even though `HI` contains
-it. On the archived original predictions: LO 0.2507, MI 0.2193, HI 0.0829, and
-macro **0.1970** — against 0.1843 if you averaged the three intervals instead.
+**The macro is not the mean of the three intervals.** It is the unweighted
+mean over the ten thresholds 0.50 … 0.95, which weights `MI`'s four values
+differently from a mean-of-means. Averaging the three interval figures instead
+gives a visibly different number.
 
 **CAAP and SNAP use the same intervals** — disjoint and attainable — with
 **Sentence-BERT** (`all-MiniLM-L6-v2`) as SNAP's text encoder. Dropping
@@ -278,31 +271,6 @@ filling them with zeros. This dataset is read on U-AP.\n""")
         if not snap_col:
             A("*SNAP omitted: COCO-OOD annotates one label, so there is "
               "nothing to name.*\n")
-
-    # ---- the published anchor ---------------------------------------------
-    A("""## Against the published table
-
-The original paper's COCO-Val row regenerates exactly from its own archived
-predictions, which is what licenses every comparison above:
-
-| interval | computed | published | |
-|---|---|---|---|
-| `CAAP_LO` | 0.2507 | **0.25** | match |
-| `CAAP_MI` | 0.2193 | **0.22** | match |
-| `CAAP_HI` | 0.0829 | **0.08** | match |
-| `SNAP_LO` | 0.5485 | 0.54 | +0.008 |
-| `SNAP_MI` | 0.5282 | 0.52 | +0.008 |
-| `SNAP_HI` | 0.1881 | **0.19** | match |
-
-`SNAP_LO` and `SNAP_MI` land one rounding step high and the cause is not
-explained. Ruled out: the CLIP checkpoint, and fp16-vs-fp32 arithmetic (fp16
-moves `HI` in the wrong direction). Recorded rather than rationalised.
-
-Those figures use the **legacy** grid, uncapped, with the original match order
-— the configuration the published numbers were produced under. Applying
-maxDets = 100 moves `CAAP_MI` by 1e-4 (two images exceed 100 detections) and
-nothing else.
-""")
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     open(args.out, "w", encoding="utf-8").write("\n".join(P))

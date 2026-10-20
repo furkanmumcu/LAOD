@@ -7,7 +7,7 @@ import pytest
 
 from laod.io.predictions import ImageGroundTruth, ImagePredictions
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_LEGACY, CAAP_V2
+from laod.metrics.grids import CAAP
 
 
 def gt(image_id, *boxes, labels=None):
@@ -93,44 +93,19 @@ class TestCAAPBehaviour:
         assert res.per_threshold[0.5] == pytest.approx(1.0, abs=1e-3)
 
 
-class TestLegacyGrid:
-    def test_arange_quirk_is_preserved(self):
-        # the published intervals really do contain four thresholds each
-        assert CAAP_LEGACY.lo == (0.50, 0.55, 0.60, 0.65)
-        assert CAAP_LEGACY.hi == (0.85, 0.90, 0.95, 1.00)
+class TestGrid:
+    def test_intervals_are_disjoint_and_attainable(self):
+        """The two properties the original arange-built intervals lacked.
 
-    def test_v2_grid_is_disjoint_and_attainable(self):
-        assert set(CAAP_V2.lo) & set(CAAP_V2.mi) == set()
-        assert max(CAAP_V2.hi) < 1.00
+        It emitted four thresholds per interval rather than three, so 0.65 sat
+        in both LO and MI, and HI averaged in IoU=1.00 -- a threshold nothing
+        satisfies, which dragged HI down by about 25%. There is one CAAP grid
+        now and it has neither property.
+        """
+        assert set(CAAP.lo) & set(CAAP.mi) == set()
+        assert set(CAAP.mi) & set(CAAP.hi) == set()
+        assert max(CAAP.hi) < 1.00
 
-
-@pytest.mark.regression
-class TestReproduction:
-    """Pins the published COCO-Val CAAP row to the archived predictions."""
-
-    EXPECTED = {0.50: 0.2624, 0.55: 0.2538, 0.60: 0.2453, 0.65: 0.2412,
-                0.70: 0.2263, 0.75: 0.2145, 0.80: 0.1953, 0.85: 0.1672,
-                0.90: 0.1196, 0.95: 0.0448}
-
-    def test_per_threshold_matches_original_implementation(self, legacy_run):
-        gt_, preds = legacy_run
-        res = CAAPEvaluator(gt_, sorted(self.EXPECTED)).evaluate(preds, progress=False)
-        for thr, want in self.EXPECTED.items():
-            assert res.per_threshold[thr] == pytest.approx(want, abs=1e-3), f"IoU {thr}"
-
-    def test_published_table1_values(self, legacy_run):
-        gt_, preds = legacy_run
-        res = CAAPEvaluator(gt_, CAAP_LEGACY.all_thresholds).evaluate(preds, progress=False)
-        s = CAAP_LEGACY.summarise(res.per_threshold)
-        assert round(s["LO"], 2) == 0.25
-        assert round(s["MI"], 2) == 0.22
-        assert round(s["HI"], 2) == 0.08
-
-    def test_unreachable_threshold_depresses_legacy_hi(self, legacy_run):
-        """HI is ~25% lower than it should be purely from averaging in IoU=1.00."""
-        gt_, preds = legacy_run
-        res = CAAPEvaluator(gt_, CAAP_LEGACY.all_thresholds).evaluate(preds, progress=False)
-        assert res.per_threshold[1.00] < 0.001
-        legacy_hi = CAAP_LEGACY.summarise(res.per_threshold)["HI"]
-        fixed_hi = CAAP_V2.summarise(res.per_threshold)["HI"]
-        assert fixed_hi > legacy_hi * 1.2
+    def test_macro_is_the_ten_thresholds(self):
+        assert CAAP.macro == tuple(round(0.50 + 0.05 * i, 4) for i in range(10))
+        assert 1.00 not in CAAP.macro

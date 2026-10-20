@@ -23,7 +23,7 @@ git clone https://github.com/furkanmumcu/LAOD.git && cd LAOD
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # add HF_TOKEN only if you use gated models
-pytest tests/ -q              # 123 pass; 6 skip until data is provisioned
+pytest tests/ -q              # 130 pass; 3 skip until data is provisioned
 ```
 
 A CUDA GPU is required for the model passes. Gemma4-12B needs ~22 GB; the rest
@@ -175,7 +175,7 @@ it to four decimals.
 ```
 laod/            the package: metrics, data, models, IO, visualisation
 scripts/         tuning, scoring, report and figure generation
-tests/           129 tests
+tests/           133 tests
 results/         frozen splits + our output tables
 run_benchmark.py       generate vocabularies and ground them
 eval_metrics_only.py   score an existing prediction file

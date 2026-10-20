@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-ParseMode = Literal["legacy", "strict"]
+ParseMode = Literal["strict"]
 
 #: Labels longer than this are kept but flagged: they are usually a model
 #: narrating rather than naming, and they skew vocabulary analyses.
@@ -83,16 +83,11 @@ def parse_labels(raw: str, mode: ParseMode = "strict", *,
                  max_labels: int | None = None) -> ParsedLabels:
     """Split an LLM reply into labels.
 
-    ``legacy`` reproduces the original exactly -- a bare comma split, keeping
-    leading spaces and original casing. Use it only to regenerate old numbers.
-
-    ``strict`` strips whitespace and bullet markers, collapses internal
+    Strips whitespace and bullet markers, collapses internal
     whitespace, lower-cases, drops empties, and de-duplicates while preserving
     order. Long phrases are kept but counted, since discarding them would hide
     exactly the behaviour worth measuring.
     """
-    if mode == "legacy":
-        return ParsedLabels(raw=raw, labels=raw.split(","), mode="legacy")
     if mode != "strict":
         raise ValueError(f"unknown parse mode {mode!r}")
 

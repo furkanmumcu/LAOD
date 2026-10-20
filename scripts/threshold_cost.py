@@ -29,7 +29,7 @@ from laod.data.splits import apply_split
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_V2
+from laod.metrics.grids import CAAP
 from laod.metrics.uap import UAPEvaluator
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
@@ -52,7 +52,7 @@ def filtered(recs, cut: float) -> list[ImagePredictions]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__original")
+    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__default")
     ap.add_argument("--dataset", choices=sorted(ANN), default="coco")
     ap.add_argument("--out", default="results/threshold_cost.csv")
     args = ap.parse_args()
@@ -63,12 +63,12 @@ def main() -> int:
     n_gt = sum(len(g) for g in gt)
     print(f"{cfg.llm} + {cfg.detector} | {len(recs)} images | {n_gt} objects\n")
 
-    ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
+    ev = CAAPEvaluator(gt, CAAP.all_thresholds)
     rows = []
     print(f"{'cut':>7} {'det/img':>8} {'CAAP':>7} {'F1':>7} {'prec':>7} {'rec':>7}")
     for cut in CUTS:
         preds = filtered(recs, cut)
-        caap = CAAP_V2.summarise(ev.evaluate(preds, progress=False).per_threshold)["MACRO"]
+        caap = CAAP.summarise(ev.evaluate(preds, progress=False).per_threshold)["MACRO"]
         u = UAPEvaluator(gt, score_threshold=cut).evaluate(preds)
         n = sum(len(p.scores) for p in preds) / len(preds)
         rows.append(dict(llm=cfg.llm, detector=cfg.detector, dataset=args.dataset,

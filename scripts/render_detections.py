@@ -25,7 +25,7 @@ from laod.viz import draw_detections, select
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__original")
+    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__default")
     ap.add_argument("--images", type=int, nargs="+", required=True,
                     help="COCO image ids")
     ap.add_argument("--out_dir", default=None,

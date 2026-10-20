@@ -24,7 +24,7 @@ from laod.data.splits import apply_split
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_V2, SNAP_LEGACY
+from laod.metrics.grids import CAAP, SNAP
 from laod.metrics.uap import UAPEvaluator
 
 #: Declared before the original runs; preserved here unchanged.
@@ -80,7 +80,7 @@ def main() -> int:
 
     gt = apply_split(load_ground_truth(getattr(PATHS, ANN[args.dataset]),
                                        args.dataset), "test")
-    ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
+    ev = CAAPEvaluator(gt, CAAP.all_thresholds)
     sev = None
     if not has_semantic_labels(args.dataset):
         print(f"SNAP skipped: {args.dataset} annotates every object "
@@ -89,7 +89,7 @@ def main() -> int:
     else:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
         sev = SNAPEvaluator(gt, TextEmbedder(device=args.device),
-                            grid=SNAP_LEGACY)
+                            grid=SNAP)
     print(f"{len(gt)} images | {sum(len(g) for g in gt)} objects\n")
 
     rows = []
@@ -104,7 +104,7 @@ def main() -> int:
         fails = sum(1 for r in recs if not (r.parse_flags or {}).get("parse_ok", 1))
         for source in SOURCES:
             p = preds_for(recs, source)
-            caap = CAAP_V2.summarise(ev.evaluate(p, progress=False).per_threshold)
+            caap = CAAP.summarise(ev.evaluate(p, progress=False).per_threshold)
             snap = (sev.evaluate(p, control=False, progress=False).summary()
                     if sev else None)
             u, t = max_f1(gt, p)

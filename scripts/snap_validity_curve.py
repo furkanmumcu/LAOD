@@ -45,7 +45,7 @@ def pair_stats(emb: np.ndarray) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__original",
+    ap.add_argument("--run", default="outputs/runs/coco-test__qwen35-9b__yolo-world__default",
                     help="run directory to sweep; defaults to the strongest COCO cell")
     ap.add_argument("--dataset", choices=sorted(ANN), default="coco")
     ap.add_argument("--out", default="results/snap_validity.json")

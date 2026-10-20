@@ -22,7 +22,7 @@ from laod.io.predictions import (DEFAULT_MAX_DETS, ImageGroundTruth,
                                  ImagePredictions, align, cap_detections,
                                  to_xyxy)
 from laod.metrics.common import (
-    LEGACY_EPS,
+    AP_EPS,
     show_progress,
     MatchOrder,
     average_precision,
@@ -118,7 +118,7 @@ class CAAPEvaluator:
         *,
         match_order: MatchOrder = "score",
         max_dets: int | None = DEFAULT_MAX_DETS,
-        eps: float = LEGACY_EPS,
+        eps: float = AP_EPS,
     ) -> None:
         if not iou_thresholds:
             raise ValueError("at least one IoU threshold is required")

@@ -47,7 +47,6 @@ class DetectorSpec:
     params_b: float
     text_encoder: str
     defaults: dict[str, float] = field(default_factory=dict)
-    v2_defaults: dict[str, float] = field(default_factory=dict)
     local_weight: str | None = None
     cached: bool = False
     notes: str = ""
@@ -117,25 +116,23 @@ LLMS: dict[str, LLMSpec] = {
 DETECTORS: dict[str, DetectorSpec] = {
     s.key: s for s in (
         DetectorSpec("yolo-world", "yolov8x-worldv2.pt", "yolo_world", 0.0, "CLIP",
-                     defaults={"conf": 0.25}, v2_defaults={"conf": 0.001},
+                     defaults={"conf": 0.001},
                      local_weight="yolov8x-worldv2.pt", cached=True,
                      notes="The detector behind every published number."),
         DetectorSpec("gdino-tiny", "IDEA-Research/grounding-dino-tiny",
                      "grounding_dino", 0.17, "BERT phrase-grounding",
-                     defaults={"score_threshold": 0.4, "text_threshold": 0.3},
-                     v2_defaults={"score_threshold": 0.03, "text_threshold": 0.3},
+                     defaults={"score_threshold": 0.03, "text_threshold": 0.3},
                      cached=True,
-                     notes="Thresholds match the original demo script."),
+                     notes="Shares gdino-base's fitted threshold; the "
+                           "sweep selected the grid floor for both."),
         DetectorSpec("gdino-base", "IDEA-Research/grounding-dino-base",
                      "grounding_dino", 0.23, "BERT phrase-grounding",
-                     defaults={"score_threshold": 0.4, "text_threshold": 0.3},
-                     v2_defaults={"score_threshold": 0.03, "text_threshold": 0.3},
+                     defaults={"score_threshold": 0.03, "text_threshold": 0.3},
                      notes="The more common benchmark default; run alongside "
                            "tiny so the cross-paper comparison is unambiguous."),
         DetectorSpec("owlv2-base", "google/owlv2-base-patch16-ensemble",
                      "owlv2", 0.15, "CLIP",
-                     defaults={"score_threshold": 0.1},
-                     v2_defaults={"score_threshold": 0.01},
+                     defaults={"score_threshold": 0.01},
                      notes="CLIP text encoder -- the sharpest test of whether "
                            "grounding degrades text-side under novel phrasing. "
                            "The only detector measured with an interior optimum: "
@@ -203,27 +200,22 @@ def resolve_prompt(key: str) -> str:
                          f"(aliases: {sorted(PROMPT_ALIASES)})")
     return k
 
-#: Confidence thresholds. "legacy" is what each backend ships or what the
-#: original run inherited -- required to regenerate the published table.
-#: "v2" was fitted on the frozen 500-image hyperparameter-selection holdout
-#: (laod/data/splits.py), which is excluded from every reported number. Each
-#: detector was swept against all seven LLMs' label sets and given the threshold
-#: maximising mean CAAP@.5:.95. Per-(LLM, detector) tuning was also measured and
-#: gained +0.00% to +0.18% over these shared values -- within noise -- so one
-#: threshold per detector is used. The per-pair fits are archived in
-#: results/tuned_thresholds.json.
-#: Thresholding before computing AP truncates the ranked PR curve, so the
-#: legacy values systematically understate every detector.
-DETECTOR_PRESETS = ("legacy", "v2")
+#: Confidence thresholds, fitted on the frozen 500-image hyperparameter
+#: holdout (laod/data/splits.py), which is excluded from every reported number.
+#: Each detector was swept against all seven LLMs' label sets and given the
+#: threshold maximising mean CAAP@.5:.95. Per-(LLM, detector) tuning was also
+#: measured and gained +0.00% to +0.18% over these shared values -- within
+#: noise -- so one threshold per detector is used.
+#:
+#: These are deliberately far below what each backend ships. Thresholding
+#: before computing AP truncates the ranked PR curve, so a high cut
+#: systematically understates every detector; the maxDets=100 cap does the
+#: real work instead.
 
 
-def detector_params(key: str, preset: str = "legacy") -> dict[str, float]:
-    """Confidence parameters for a detector under the named preset."""
-    if preset not in DETECTOR_PRESETS:
-        raise ValueError(f"unknown detector preset {preset!r}; have {DETECTOR_PRESETS}")
-    spec = DETECTORS[key]
-    return dict(spec.defaults) if preset == "legacy" else {**spec.defaults,
-                                                           **spec.v2_defaults}
+def detector_params(key: str) -> dict[str, float]:
+    """Confidence parameters for a detector."""
+    return dict(DETECTORS[key].defaults)
 
 
 #: Models that actually run. ``LLMS`` keeps unsupported entries so the reason

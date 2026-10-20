@@ -40,7 +40,7 @@ from laod.config import PATHS
 from laod.io.predictions import (DEFAULT_MAX_DETS, ImageGroundTruth,
                                  ImagePredictions, align, cap_detections)
 from laod.metrics.common import (
-    LEGACY_EPS,
+    AP_EPS,
     MatchOrder,
     average_precision,
     greedy_match,
@@ -260,7 +260,7 @@ class SNAPEvaluator:
         center: bool = False,
         match_order: MatchOrder = "score",
         max_dets: int | None = DEFAULT_MAX_DETS,
-        eps: float = LEGACY_EPS,
+        eps: float = AP_EPS,
     ) -> None:
         self.ground_truth = list(ground_truth)
         self.embedder = embedder or TextEmbedder()

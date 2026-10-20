@@ -26,7 +26,7 @@ from laod.config import PATHS
 from laod.data.annotations import load_ground_truth
 from laod.data.splits import apply_split
 from laod.io.run_store import load_run
-from laod.metrics.grids import SNAP_LEGACY
+from laod.metrics.grids import SNAP
 from laod.metrics.snap import SNAPEvaluator, TextEmbedder
 
 #: name -> (backend, model, template, centre)
@@ -36,9 +36,9 @@ ENCODERS = {
     "minilm":       ("sbert", "sentence-transformers/all-MiniLM-L6-v2", "{}", False),
     "mpnet":        ("sbert", "sentence-transformers/all-mpnet-base-v2", "{}", False),
 }
-CELLS = ["coco-test__qwen35-9b__yolo-world__original",
-         "coco-test__qwen35-9b__owlv2-base__original",
-         "coco-test__gemma4-12b__gdino-base__original"]
+CELLS = ["coco-test__qwen35-9b__yolo-world__default",
+         "coco-test__qwen35-9b__owlv2-base__default",
+         "coco-test__gemma4-12b__gdino-base__default"]
 
 
 def main() -> int:
@@ -70,11 +70,11 @@ def main() -> int:
             backend, model, template, centre = ENCODERS[name]
             emb = TextEmbedder(model, backend=backend, device=args.device,
                                template=template)
-            res = SNAPEvaluator(gt, emb, grid=SNAP_LEGACY, center=centre).evaluate(
+            res = SNAPEvaluator(gt, emb, grid=SNAP, center=centre).evaluate(
                 preds, control=True, progress=False)
             real, chance = res.summary(), {}
-            for k, taus in (("LO", SNAP_LEGACY.lo), ("MI", SNAP_LEGACY.mi),
-                            ("HI", SNAP_LEGACY.hi)):
+            for k, taus in (("LO", SNAP.lo), ("MI", SNAP.mi),
+                            ("HI", SNAP.hi)):
                 chance[k] = float(np.mean([res.chance.get(round(t, 4), np.nan)
                                            for t in taus]))
             out["cells"][tag][name] = {

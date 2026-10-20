@@ -22,7 +22,7 @@ import numpy as np
 from laod.io.predictions import (DEFAULT_MAX_DETS, ImageGroundTruth,
                                  ImagePredictions, align, cap_detections)
 from laod.metrics.common import (
-    LEGACY_EPS,
+    AP_EPS,
     MatchOrder,
     average_precision,
     box_iou_matrix,
@@ -81,7 +81,7 @@ class UAPEvaluator:
         score_threshold: float = DEFAULT_SCORE_THRESHOLD,
         match_order: MatchOrder = "score",
         max_dets: int | None = DEFAULT_MAX_DETS,
-        eps: float = LEGACY_EPS,
+        eps: float = AP_EPS,
     ) -> None:
         self.ground_truth = list(ground_truth)
         self.iou_threshold = float(iou_threshold)

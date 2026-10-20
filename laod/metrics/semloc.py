@@ -43,7 +43,7 @@ from tqdm.auto import tqdm
 
 from laod.io.predictions import (DEFAULT_MAX_DETS, ImageGroundTruth,
                                  ImagePredictions, align, cap_detections)
-from laod.metrics.common import (LEGACY_EPS, MatchOrder, average_precision,
+from laod.metrics.common import (AP_EPS, MatchOrder, average_precision,
                                  box_iou_matrix, greedy_match, show_progress)
 from laod.metrics.grids import key
 from laod.metrics.snap import TextEmbedder
@@ -172,7 +172,7 @@ class SemLocEvaluator:
         sem_thresholds: Sequence[float] = SEM_THRESHOLDS,
         match_order: MatchOrder = "score",
         max_dets: int | None = DEFAULT_MAX_DETS,
-        eps: float = LEGACY_EPS,
+        eps: float = AP_EPS,
     ) -> None:
         if not iou_thresholds or not sem_thresholds:
             raise ValueError("both threshold grids must be non-empty")

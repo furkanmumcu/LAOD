@@ -3,7 +3,7 @@
 The in-memory containers here are the single interchange format between
 dataloaders, detectors and metrics. A versioned JSON form on disk lets
 ``eval_metrics_only.py`` score runs produced elsewhere, and a converter reads
-the legacy ``.npy`` dumps from the original paper so those runs stay evaluable.
+prediction files written by this pipeline.
 """
 
 from __future__ import annotations
@@ -204,49 +204,3 @@ def _from_coco_results(rows: list[dict[str, Any]]) -> list[ImagePredictions]:
             labels=[str(i.get("category_name", i.get("category_id", ""))) for i in items],
         ))
     return out
-
-
-# --------------------------------------------------------------------------
-# Legacy .npy dumps from the original paper
-# --------------------------------------------------------------------------
-
-def load_legacy_npy(
-    run_dir: str | Path,
-    *,
-    category_names: dict[int, str] | None = None,
-) -> tuple[list[ImageGroundTruth], list[ImagePredictions]]:
-    """Read an original ``{all_gt,all_dt}.npy`` pair.
-
-    The dumps are index-aligned lists of per-image rows:
-    ``gt = [x1, y1, x2, y2, category_id]`` and
-    ``dt = [x1, y1, x2, y2, score, label]``.
-
-    They carry no image ids, so positional index is used as a synthetic id;
-    this is faithful because both files were written from one ordered pass.
-    Prediction label strings are kept verbatim -- the original pipeline never
-    stripped or lower-cased them, and reproducing its numbers requires the
-    exact strings that were embedded.
-    """
-    run_dir = Path(run_dir)
-    gt_raw = np.load(run_dir / "all_gt.npy", allow_pickle=True)
-    dt_raw = np.load(run_dir / "all_dt.npy", allow_pickle=True)
-    if len(gt_raw) != len(dt_raw):
-        raise ValueError(f"{run_dir}: {len(gt_raw)} GT images vs {len(dt_raw)} DT images")
-
-    gt, preds = [], []
-    for i, (g_rows, d_rows) in enumerate(zip(gt_raw, dt_raw)):
-        g_boxes = np.array([r[:4] for r in g_rows], np.float32).reshape(-1, 4)
-        g_ids = [int(r[4]) for r in g_rows]
-        g_labels = [category_names[c] if category_names else str(c) for c in g_ids]
-        gt.append(ImageGroundTruth(i, g_boxes, g_labels))
-
-        d_boxes = np.array([r[:4] for r in d_rows], np.float32).reshape(-1, 4)
-        preds.append(ImagePredictions(
-            image_id=i,
-            boxes=d_boxes,
-            scores=np.array([float(r[4]) for r in d_rows], np.float32),
-            labels=[str(r[5]) for r in d_rows],
-        ))
-    logger.info("loaded legacy run %s: %d images, %d GT, %d detections",
-                run_dir.name, len(gt), sum(map(len, gt)), sum(map(len, preds)))
-    return gt, preds

@@ -72,19 +72,32 @@ def main() -> int:
     check("SNAP default template is bare", e.template == "{}", repr(e.template))
 
     print("\n=== 2. CAAP and SNAP share one interval structure ===")
-    from laod.metrics.grids import CAAP_V2, SNAP_DISJOINT
+    from laod.metrics.grids import CAAP, SNAP
     for k in ("lo", "mi", "hi"):
-        a, b = getattr(CAAP_V2, k), getattr(SNAP_DISJOINT, k)
+        a, b = getattr(CAAP, k), getattr(SNAP, k)
         check(f"{k.upper()} identical", a == b, f"CAAP {a} vs SNAP {b}")
     check("no threshold of 1.00 in either",
-          1.0 not in CAAP_V2.hi and 1.0 not in SNAP_DISJOINT.hi)
+          1.0 not in CAAP.hi and 1.0 not in SNAP.hi)
     check("LO and MI are disjoint",
-          not (set(CAAP_V2.lo) & set(CAAP_V2.mi)))
+          not (set(CAAP.lo) & set(CAAP.mi)))
 
-    print("\n=== 3. the SBERT pass used that grid ===")
-    src = open("scripts/snap_sbert_all.py").read()
-    check("snap_sbert_all uses SNAP_DISJOINT", "grid=SNAP_DISJOINT" in src)
-    check("no SNAP_LEGACY left in it", "SNAP_LEGACY" not in src)
+    print("\n=== 3. there is one SNAP grid, and the sweeps use it ===")
+    from laod.metrics.grids import SNAP, SNAP_GRIDS
+    import laod.metrics.grids as _g
+    # The legacy/disjoint split is gone: one grid, named once. A second
+    # SNAP grid reappearing is how LO/MI/HI columns drift apart between
+    # tables that are meant to be comparable.
+    check("no SNAP_LEGACY / SNAP_DISJOINT symbol survives",
+          not hasattr(_g, "SNAP_LEGACY") and not hasattr(_g, "SNAP_DISJOINT"))
+    check("SNAP intervals are disjoint",
+          not (set(SNAP.lo) & set(SNAP.mi) or set(SNAP.mi) & set(SNAP.hi)))
+    check("SNAP HI stops at 0.95", 1.0 not in SNAP.hi)
+    for f in ("scripts/snap_sbert_all.py", "scripts/semloc_all.py",
+              "scripts/maxdets_compare.py", "scripts/report_stage.py",
+              "scripts/rescore_vlm.py", "scripts/run_vlm_detect.py"):
+        src = open(f).read()
+        check(f"{os.path.basename(f)} names no other SNAP grid",
+              "SNAP_LEGACY" not in src and "SNAP_DISJOINT" not in src)
 
     if missing:
         print("\n(sections 4-8 skipped: reports not generated)")
@@ -205,7 +218,7 @@ def main() -> int:
     if not os.path.exists("results/semloc.csv"):
         check("results/semloc.csv present", False, "run scripts/semloc_all.py")
     else:
-        from laod.metrics.grids import CAAP_V2, SNAP_DISJOINT
+        from laod.metrics.grids import CAAP, SNAP
         from laod.metrics.semloc import (IOU_THRESHOLDS, SEM_THRESHOLDS,
                                          SemLocEvaluator)
         p = inspect.signature(SemLocEvaluator.__init__).parameters
@@ -219,11 +232,11 @@ def main() -> int:
         # axes are the same thresholds those two are reported on. If either
         # grid is ever retuned, this is the check that should fail.
         check("IoU axis equals the CAAP grid",
-              tuple(IOU_THRESHOLDS) == tuple(CAAP_V2.macro),
-              f"{IOU_THRESHOLDS} vs {CAAP_V2.macro}")
+              tuple(IOU_THRESHOLDS) == tuple(CAAP.macro),
+              f"{IOU_THRESHOLDS} vs {CAAP.macro}")
         check("cosine axis equals the SNAP grid",
-              tuple(SEM_THRESHOLDS) == tuple(SNAP_DISJOINT.macro),
-              f"{SEM_THRESHOLDS} vs {SNAP_DISJOINT.macro}")
+              tuple(SEM_THRESHOLDS) == tuple(SNAP.macro),
+              f"{SEM_THRESHOLDS} vs {SNAP.macro}")
 
         sl = load("results/semloc.csv")
         check("every cell used Sentence-BERT",

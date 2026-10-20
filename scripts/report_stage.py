@@ -25,7 +25,7 @@ from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.data.splits import apply_split
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_LEGACY, CAAP_V2, SNAP_DISJOINT
+from laod.metrics.grids import CAAP, SNAP
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
 
@@ -71,7 +71,7 @@ def main() -> int:
         if not gt:
             raise SystemExit(f"no {args.dataset} ground truth survived the "
                              f"ablation subset -- wrong subset file?")
-    ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
+    ev = CAAPEvaluator(gt, CAAP.all_thresholds)
     n_gt = sum(len(g) for g in gt)
 
     cells = []
@@ -79,7 +79,7 @@ def main() -> int:
         cfg, recs = load_run(d)
         preds = [r.to_predictions() for r in recs]
         res = ev.evaluate(preds, progress=False)
-        s = CAAP_V2.summarise(res.per_threshold)
+        s = CAAP.summarise(res.per_threshold)
         vocab = {}
         flags = {}
         for r in recs:
@@ -102,7 +102,7 @@ def main() -> int:
         if args.snap and has_semantic_labels(args.dataset):
             from laod.metrics.snap import SNAPEvaluator, TextEmbedder
             emb = TextEmbedder(device=DEV)
-            sn = SNAPEvaluator(gt, emb, grid=SNAP_DISJOINT).evaluate(
+            sn = SNAPEvaluator(gt, emb, grid=SNAP).evaluate(
                 preds, control=True, progress=False)
             sm = sn.summary()
             cell.update(snap_lo=sm["LO"], snap_mi=sm["MI"], snap_hi=sm["HI"],
@@ -129,7 +129,7 @@ def main() -> int:
                "CAAP_LO", "CAAP_MI", "CAAP_HI", "CAAP@.5:.95", "vocab"]), ""]
 
     if args.snap and "snap_macro" in cells[0]:
-        L += ["## SNAP (Sentence-BERT, SNAP_DISJOINT grid, with label-shuffle control)", "",
+        L += ["## SNAP (Sentence-BERT, SNAP grid, with label-shuffle control)", "",
               fmt([[c["llm"], c["detector"], f"{c['snap_lo']:.4f}", f"{c['snap_mi']:.4f}",
                     f"{c['snap_hi']:.4f}", f"{c['snap_macro']:.4f}",
                     f"{c['snap_gain_85']:+.4f}"]
@@ -205,13 +205,14 @@ def main() -> int:
           "Grounding DINO backends. YOLO-World and OWLv2 associate a box to "
           "its entry by integer index and were never affected.",
           "",
-          "2. **SNAP grid.** This report now summarises SNAP on "
-          "`SNAP_DISJOINT` rather than `SNAP_LEGACY`, matching the headline "
-          "reports. The legacy grid put 0.65 in both LO and MI and included "
-          "tau=1.00 in HI, which requires near-identical embeddings and "
-          "deflated every SNAP_HI by about 22%. The threshold values are "
-          "otherwise unchanged, so the macro average is unaffected -- only the "
-          "LO / MI / HI columns move.",
+          "2. **SNAP grid.** This report previously built its intervals from "
+          "an `np.arange` construction that put 0.65 in both LO and MI and "
+          "ran HI to tau=1.00, which requires near-identical embeddings and "
+          "deflated every SNAP_HI by about 22%. There is now a single `SNAP` "
+          "grid with those defects removed, shared with the headline reports. "
+          "The threshold values are otherwise unchanged and the macro average "
+          "never contained 1.00, so it is unaffected -- only the LO / MI / HI "
+          "columns move.",
           "",
           "*See `reports/RESULTS.md` for the headline tables and "
           "`LABEL_AUDIT.md` for the backend-by-backend label audit.*", ""]

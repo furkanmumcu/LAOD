@@ -217,8 +217,8 @@ Two consequences worth weighing before switching:
    the CLIP figure was mostly counting detections, not naming.
 2. **Comparability with the published SNAP row is lost.** The original paper's
    0.54 / 0.52 / 0.19 is a CLIP number on a CLIP geometry. If MiniLM becomes
-   the reported metric, CLIP has to stay alongside it as the legacy encoder —
-   the same arrangement already used for the threshold grids.
+   the reported metric, CLIP has to stay alongside it as the original encoder,
+   rather than silently replacing it.
 
 ## Files
 

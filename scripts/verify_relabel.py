@@ -26,7 +26,7 @@ from laod.data.splits import apply_split
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
 from laod.metrics.uap import UAPEvaluator
-from laod.metrics.grids import CAAP_V2
+from laod.metrics.grids import CAAP
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
 
@@ -80,9 +80,9 @@ def main() -> int:
 
         op = [r.to_predictions() for r in orecs]
         np_ = [r.to_predictions() for r in nrecs]
-        cev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
-        c_o = CAAP_V2.summarise(cev.evaluate(op, progress=False).per_threshold)["MACRO"]
-        c_n = CAAP_V2.summarise(cev.evaluate(np_, progress=False).per_threshold)["MACRO"]
+        cev = CAAPEvaluator(gt, CAAP.all_thresholds)
+        c_o = CAAP.summarise(cev.evaluate(op, progress=False).per_threshold)["MACRO"]
+        c_n = CAAP.summarise(cev.evaluate(np_, progress=False).per_threshold)["MACRO"]
         uev = UAPEvaluator(gt)
         u_o = uev.evaluate(op).u_ap
         u_n = uev.evaluate(np_).u_ap

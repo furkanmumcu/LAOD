@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 
 from laod.io.predictions import ImageGroundTruth, ImagePredictions
-from laod.metrics.grids import SNAP_LEGACY, SNAP_YEN
+from laod.metrics.grids import SNAP, SNAP_YEN
 from laod.metrics.snap import SNAPEvaluator, calibrate_thresholds
 
 
@@ -196,9 +196,35 @@ class TestCalibration:
 
 
 class TestGrids:
-    def test_legacy_snap_grid_inherits_the_arange_quirk(self):
-        assert SNAP_LEGACY.lo == (0.50, 0.55, 0.60, 0.65)
-        assert 1.00 in SNAP_LEGACY.hi
+    def test_snap_intervals_are_disjoint_and_stop_at_095(self):
+        """The three defects the original ``np.arange`` construction had.
+
+        It produced ``lo=(0.50, 0.55, 0.60, 0.65)`` -- four values where the
+        comment claimed three -- so 0.65 sat in both LO and MI, and HI ran to
+        tau=1.00, which requires near-identical embeddings and deflated every
+        SNAP_HI by about 22%. There is one SNAP grid now and it has none of
+        those properties.
+        """
+        assert SNAP.lo == (0.50, 0.55, 0.60)
+        assert SNAP.mi == (0.65, 0.70, 0.75, 0.80)
+        assert SNAP.hi == (0.85, 0.90, 0.95)
+        assert not set(SNAP.lo) & set(SNAP.mi)
+        assert 1.00 not in SNAP.hi
+
+    def test_snap_macro_is_ten_thresholds_and_excludes_100(self):
+        """Why collapsing the grids could not move a published number.
+
+        The macro average never contained 1.00, so it was identical under the
+        old and new interval definitions. Every headline SNAP in the paper is
+        this mean; only the LO/MI/HI columns ever depended on the grid.
+        """
+        assert SNAP.macro == tuple(round(0.50 + 0.05 * i, 4) for i in range(10))
+        assert 1.00 not in SNAP.macro
+
+    def test_snap_shares_the_caap_interval_structure(self):
+        """LO/MI/HI must mean the same thing in both metrics."""
+        from laod.metrics.grids import CAAP
+        assert (SNAP.lo, SNAP.mi, SNAP.hi) == (CAAP.lo, CAAP.mi, CAAP.hi)
 
     def test_yen_macro_is_the_four_fixed_thresholds(self):
         assert SNAP_YEN.macro == (0.60, 0.70, 0.80, 0.90)

@@ -204,9 +204,6 @@ differ from the original LAOD implementation:
    a box to its vocabulary entry by integer index and so were never affected.
    The two backends were audited together; see `LABEL_AUDIT.md`.
 
-The published-table reproduction survives all three changes: CAAP
-0.2507 / 0.2194 / 0.0829 against a published 0.25 / 0.22 / 0.08.
-
 ### What the CAAP and SNAP columns are
 
 Every CAAP and SNAP number in this document is the **macro average: the
@@ -234,8 +231,9 @@ Both metrics use the same interval structure: `LO` = 0.50/0.55/0.60,
 It is *not* `LO`, `MI` or `HI`. Those are sub-ranges of the same per-threshold
 curve, and the macro spans all three. Worked from the reproduction: the
 per-IoU CAAP values 0.2624, 0.2538, 0.2453, 0.2412, 0.2263, 0.2145, 0.1953,
-0.1672, 0.1196, 0.0448 average to **0.1970**, the reported macro. The legacy
-grid's eleventh value (IoU 1.00) is excluded even though it sits inside `HI`.
+0.1672, 0.1196, 0.0448 average to **0.1970**, the reported macro. IoU 1.00 is
+not among them: nothing satisfies it, and averaging it in would only deflate
+the score.
 
 The `LO` / `MI` / `HI` breakdown the original paper reports is in
 **`reports/INTERVALS.md`**, kept separate to stop these tables becoming
@@ -487,10 +485,9 @@ detections already on disk):
         A("""Average precision integrates over the ranking, so appending
 lower-ranked detections can only extend recall — CAAP is maximised by emitting
 everything. F1 scores one operating point and peaks an order of magnitude
-earlier. The original LAOD inherited Ultralytics' stock `conf=0.25` and never
-changed it (its archived predictions have a minimum score of exactly 0.2500 at
-5.55 detections per image), which sits within 2% of the F1 optimum while giving
-up 26% of CAAP.
+earlier. Ultralytics' stock `conf=0.25` sits within 2% of the F1 optimum while
+giving up 26% of CAAP, which is why the fitted thresholds sit far below it and
+the maxDets cap does the thresholding instead.
 """)
     sv = rd(f"{R}/snap_validity.json")
     if sv:
