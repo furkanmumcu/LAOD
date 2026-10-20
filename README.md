@@ -93,6 +93,7 @@ maps to one command:
 | MLLMs as direct detectors | `scripts/run_vlm_detect.py` |
 | Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` |
 | Fig. 6 — qualitative | `scripts/pick_qualitative.py`, then the two render scripts |
+| Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) |
 
 The `results/` directory ships the frozen split id lists and our own output
 tables, so you can diff your numbers against ours rather than only hoping they
@@ -180,6 +181,7 @@ results/         frozen splits + our output tables
 run_benchmark.py       generate vocabularies and ground them
 eval_metrics_only.py   score an existing prediction file
 LABEL_AUDIT.md         how each detector associates a box to a vocabulary entry
+GENERATEU.md           rebuilding the external GenerateU baseline
 ```
 
 ## Citation
