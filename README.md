@@ -1,7 +1,18 @@
-# LAOD: LLM-Guided Autonomous Object Detection for Open-World Understanding
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/title-dark.svg">
+    <img width="760"
+         alt="MLLM-Guided Autonomous Object Detection for Open-World Understanding"
+         src="assets/title-light.svg">
+  </picture>
+</h1>
 
-[![arXiv](https://img.shields.io/badge/Read_Our_Paper-arXiv-red)](https://arxiv.org/abs/2507.10844)
-[![HuggingFace Space](https://img.shields.io/badge/🤗-HuggingFace%20Demo-blue.svg)](https://huggingface.co/spaces/fumucu/LAOD)
+<p align="center">
+  <a href="https://arxiv.org/abs/2507.10844"><img alt="arXiv"
+     src="https://img.shields.io/badge/Read_Our_Paper-arXiv-red"></a>
+  <a href="https://huggingface.co/spaces/fumucu/LAOD"><img alt="HuggingFace Space"
+     src="https://img.shields.io/badge/🤗-HuggingFace%20Demo-blue.svg"></a>
+</p>
 
 A multimodal LLM reads an image and writes an **image-specific detection
 vocabulary**; an open-vocabulary detector then grounds those names. Nothing is
@@ -96,15 +107,15 @@ image-rendering code ships here.
 | Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` | `results/threshold_cost.csv` |
 | Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh` then `scripts/eval_fixed_ontology.py` | `results/fixed_ontology/` |
 | Table 3 — GenerateU rows | external baseline, see [GENERATEU.md](GENERATEU.md) | — |
-| Table 3 — LAOD and direct-MLLM rows | already produced by the rows above | see below |
+| Table 3 — <picture><source media="(prefers-color-scheme: dark)" srcset="assets/laod-dark.svg"><img alt="LAOD" src="assets/laod-light.svg" height="11"></picture> and direct-MLLM rows | already produced by the rows above | see below |
 
 Table 3 is three comparisons in one table, and only its GenerateU rows come
 from outside this repository. The rest are specific cells of the main grid -
 the same configuration Table 2 uses, not one picked for the comparison:
 
-- LAOD (MLLM + YOLO-World) - one cell of `results/main_coco.csv` for CAAP,
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/laod-dark.svg"><img alt="LAOD" src="assets/laod-light.svg" height="11"></picture> (MLLM + YOLO-World) - one cell of `results/main_coco.csv` for CAAP,
   `results/snap_sbert.csv` for SNAP, `results/semloc.csv` for SemLoc-AP
-- LAOD detector avg. range - each detector averaged over the MLLMs, then the
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/laod-dark.svg"><img alt="LAOD" src="assets/laod-light.svg" height="11"></picture> detector avg. range - each detector averaged over the MLLMs, then the
   min and max across the four detectors
 - Direct MLLM - `results/phase3_vlm_coco.csv`, except SNAP, which comes from
   the `vlm` rows of `results/snap_sbert.csv`
