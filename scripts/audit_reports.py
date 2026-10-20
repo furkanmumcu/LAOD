@@ -205,6 +205,21 @@ def main() -> int:
     check("RESULTS states every VLM metric uses logprob_bbox",
           "Every metric here is ranked by `logprob_bbox`" in r)
 
+    # The VLM SNAP column exists in two places, and they drifted: the reports
+    # read snap_sbert.csv's vlm rows, so phase3_vlm_coco.csv's own snap column
+    # went stale across the CLIP -> Sentence-BERT switch without anything
+    # failing. Pin them together.
+    sbv = {x["llm"]: x for x in sb
+           if x["stage"] == "vlm" and x["dataset"] == "coco"}
+    for row in load("results/phase3_vlm_coco.csv"):
+        if row["score_source"] != "logprob_bbox":
+            continue
+        want = sbv.get(row["model"])
+        if want:
+            check(f"phase3_vlm_coco {row['model']}: SNAP agrees with snap_sbert",
+                  abs(row["snap"] - want["snap_macro"]) < 1e-4,
+                  f"{row['snap']:.4f} vs {want['snap_macro']:.4f}")
+
     print("\n=== 8. no stale CLIP SNAP leaking into the reports ===")
     sb1 = {(x["llm"], x["detector"]): x for x in sb if x["stage"] == "stage1"}
     clip = load("results/main_coco.csv")

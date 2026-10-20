@@ -91,11 +91,23 @@ image-rendering code ships here.
 | Tables 8, 10 — SemLoc-AP marginals | `scripts/semloc_all.py` then `scripts/build_semloc_report.py` | `results/semloc.csv`, `results/semloc_matrices.json` |
 | Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` | `results/snap_sbert.csv` (`stage2`) |
 | Table 2, 12 — unknown-object detection | `scripts/uap_pipeline_ood.py` | `results/phase4_uap_coco_ood.csv` |
-| MLLMs as direct detectors | `scripts/run_vlm_detect.py` then `scripts/rescore_vlm.py` | `results/phase3_vlm_*.csv` |
+| Fig. 6, Table 24 — MLLMs as direct detectors | `scripts/run_vlm_detect.py` then `scripts/rescore_vlm.py` | `results/phase3_vlm_*.csv` |
 | Tables 19–20 — refinement loop and its controls | `scripts/run_vocab_feedback.py`, then `scripts/selective_refinement*.py` | `results/feedback_dev/`, `results/selective_refinement/` |
 | Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` | `results/threshold_cost.csv` |
 | Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh` then `scripts/eval_fixed_ontology.py` | `results/fixed_ontology/` |
-| Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) | — |
+| Table 3 — GenerateU rows | external baseline, see [GENERATEU.md](GENERATEU.md) | — |
+| Table 3 — LAOD and direct-MLLM rows | already produced by the rows above | see below |
+
+Table 3 is three comparisons in one table, and only its GenerateU rows come
+from outside this repository. The rest are specific cells of the main grid -
+the same configuration Table 2 uses, not one picked for the comparison:
+
+- LAOD (MLLM + YOLO-World) - one cell of `results/main_coco.csv` for CAAP,
+  `results/snap_sbert.csv` for SNAP, `results/semloc.csv` for SemLoc-AP
+- LAOD detector avg. range - each detector averaged over the MLLMs, then the
+  min and max across the four detectors
+- Direct MLLM - `results/phase3_vlm_coco.csv`, except SNAP, which comes from
+  the `vlm` rows of `results/snap_sbert.csv`
 
 Figures 3-5 are heatmaps over the MLLM x detector grid - one value per cell,
 colour standing in for a number. The commands above write those numbers
