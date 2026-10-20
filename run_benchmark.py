@@ -46,6 +46,7 @@ from tqdm.auto import tqdm
 
 from laod.config import PATHS
 from laod.data import coco_loader, coco_ood_loader, lvis_loader
+from laod.data.annotations import has_semantic_labels
 from laod.data.splits import (ABLATION_LVIS_PATH, apply_split,
                               load_ablation_subset)
 from laod.data.base import DetectionImageDataset, build_dataloader
@@ -237,8 +238,9 @@ def _free_gpu() -> None:
         pass
 
 
-def evaluate_run(run_dir: Path, gt, device: str = "cuda:1") -> None:
-    """Score one stored run with CAAP and the calibrated SNAP."""
+def evaluate_run(run_dir: Path, gt, device: str = "cuda:1",
+                 dataset: str = "coco") -> None:
+    """Score one stored run with CAAP and, where defined, SNAP."""
     from laod.io.run_store import run_to_predictions
     from laod.metrics.caap import CAAPEvaluator
     from laod.metrics.grids import CAAP_V2, SNAP_LEGACY
@@ -249,6 +251,10 @@ def evaluate_run(run_dir: Path, gt, device: str = "cuda:1") -> None:
     s = CAAP_V2.summarise(res.per_threshold)
     print(f"CAAP  LO {s['LO']:.4f}  MI {s['MI']:.4f}  HI {s['HI']:.4f}  "
           f"50:95 {s['MACRO']:.4f}")
+    if not has_semantic_labels(dataset):
+        print(f"SNAP skipped: {dataset} annotates every object under a "
+              f"single category, so there is no name to match against.")
+        return
     try:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
         snap = SNAPEvaluator(gt, TextEmbedder(device=device),
@@ -305,7 +311,7 @@ def main(argv: list[str] | None = None) -> int:
                              meta={"run": run_dir.name})
     if args.evaluate:
         for run_dir in written:
-            evaluate_run(run_dir, gt, args.device)
+            evaluate_run(run_dir, gt, args.device, args.dataset)
     return 0
 
 

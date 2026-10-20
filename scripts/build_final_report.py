@@ -21,6 +21,8 @@ sys.path.insert(0, ".")
 
 import numpy as np
 
+from laod.data.annotations import has_semantic_labels
+
 R = "results"
 REP = "reports"
 
@@ -42,6 +44,16 @@ def sbert_snap(stage: str) -> dict:
     rows = rd(f"{R}/snap_sbert.csv") or []
     return {(r["llm"], r["detector"]): r
             for r in rows if r["stage"] == stage}
+
+
+def semloc(stage: str) -> dict:
+    """(llm, detector) -> the SemLoc-AP row, within one stage.
+
+    Keyed within the stage for the same reason sbert_snap() is: Stage 1 and
+    Stage 2 share llm and detector but score different image sets.
+    """
+    rows = rd(f"{R}/semloc.csv") or []
+    return {(r["llm"], r["detector"]): r for r in rows if r["stage"] == stage}
 
 
 def rd(path):
@@ -94,33 +106,47 @@ def section_stage(main, name, dataset, note="", stage="stage1"):
     if not cells:
         return f"\n*(`{R}/{main}` not present -- stage not rebuilt)*\n"
     sb = sbert_snap(stage)
+    sl = semloc(stage)
     for c in cells:
         row = sb.get((c["llm"], c["detector"]))
         if row:
             c["snap_clip"] = c.get("snap_maxdets")
             c["snap_maxdets"] = row["snap_macro"]
             c["snap_gain"] = row["gain_macro"]
+        srow = sl.get((c["llm"], c["detector"]))
+        if srow:
+            c["semloc"] = srow["semloc"]
     llms = sorted({c["llm"] for c in cells},
                   key=lambda l: -np.mean([c["caap_maxdets"] for c in cells if c["llm"] == l]))
     dets = sorted({c["detector"] for c in cells},
                   key=lambda d: -np.mean([c["caap_maxdets"] for c in cells if c["detector"] == d]))
     out = [note, "", "**CAAP@.5:.95, maxDets=100**", "",
            grid_table(cells, "caap_maxdets", llms, dets), ""]
-    if dataset == "coco_ood":
-        out += ["**SNAP is not reported for COCO-OOD.** The dataset annotates "
-                "every object under one label, `unknow object`, so there is no "
-                "naming to score: a shuffled-label control gives a gain of "
-                "exactly +0.0000 on all 28 cells. Read this dataset on U-AP, "
+    if not has_semantic_labels(dataset):
+        out += ["**SNAP and SemLoc-AP are not defined for COCO-OOD.** The "
+                "dataset annotates every object under one label, "
+                "`unknow object`, so there is no naming to score: a "
+                "shuffled-label control gives a gain of exactly +0.0000 on "
+                "all 28 cells. The scorers decline to emit the columns rather "
+                "than filling them with zeros. Read this dataset on U-AP, "
                 "which is what it was built for.", ""]
     elif "snap_maxdets" in cells[0]:
         out += ["**SNAP (Sentence-BERT), maxDets=100**", "",
                 grid_table(cells, "snap_maxdets", llms, dets), ""]
+    if "semloc" in cells[0]:
+        out += ["**SemLoc-AP (joint localisation + naming), maxDets=100**", "",
+                grid_table(cells, "semloc", llms, dets), "",
+                "*Macro over the 100 (IoU, cosine) threshold pairs. A prediction "
+                "counts only when one ground-truth instance satisfies both "
+                "criteria, so this is not comparable in magnitude to CAAP or "
+                "SNAP -- see `reports/SEMLOC.md`.*", ""]
     out += ["**Detections per image, after the cap**", "",
             grid_table(cells, "det_per_img_capped", llms, dets, "{:.1f}"), ""]
     best = max(cells, key=lambda c: c["caap_maxdets"])
     out += [f"Best cell: `{best['llm']}` + `{best['detector']}` -- "
             f"CAAP {best['caap_maxdets']:.4f}"
-            + (f", SNAP {best['snap_maxdets']:.4f}" if "snap_maxdets" in best else "")
+            + (f", SNAP {best['snap_maxdets']:.4f}"
+               if "snap_maxdets" in best and has_semantic_labels(dataset) else "")
             + f", {best['det_per_img_capped']:.0f} det/img.", ""]
     return "\n".join(out)
 
@@ -141,8 +167,8 @@ and dropped.*
 
 ## How to read these numbers
 
-Two conventions apply to **every** metric in this document, and both differ
-from the original LAOD implementation:
+Three conventions apply to **every** metric in this document, and all three
+differ from the original LAOD implementation:
 
 1. **Matching visits predictions by descending score.** Matching is one-to-one
    and first-come-first-served, so the visit order decides which prediction
@@ -156,7 +182,29 @@ from the original LAOD implementation:
    image; we now apply the same cap, once, to the prediction list before any
    metric runs — so CAAP, SNAP and U-AP always see the identical detection set.
 
-The published-table reproduction survives both changes: CAAP
+3. **Grounding DINO labels are read from the logits, not from the decoded
+   phrase.** A box's confidence is the maximum over its (query, text-token)
+   row, and the vocabulary entry owning that winning token is the entry the box
+   grounds to. HuggingFace's post-processor instead rebuilds a phrase from the
+   tokens above `text_threshold`, which at our operating point (score 0.03,
+   text 0.30) returned an **empty** name for ~96% of retained boxes and
+   fragments such as `'##et'` for `'tennis racket'` for most of the rest. We
+   now map each box to its owning entry — located by character offset, so an
+   entry containing a period stays intact — and return the exact supplied
+   string. The winning token lay inside a vocabulary span on 55,928 of 55,928
+   audited boxes, so the reported score already refers to that entry and is
+   left untouched. `text_threshold` therefore no longer influences any label,
+   which is why it was never tuned.
+
+   Boxes, scores and thresholds are unchanged by construction. Verified across
+   all 36 re-detected cells: boxes and scores bit-identical, CAAP and U-AP
+   unchanged at full precision (`results/relabel_verification.csv`). SNAP rose
+   on every Grounding DINO cell — **+11.9% mean on COCO-Val, +26.5% on LVIS** —
+   and moved by **0.0000** on every YOLO-World and OWLv2 cell, which associate
+   a box to its vocabulary entry by integer index and so were never affected.
+   The two backends were audited together; see `LABEL_AUDIT.md`.
+
+The published-table reproduction survives all three changes: CAAP
 0.2507 / 0.2194 / 0.0829 against a published 0.25 / 0.22 / 0.08.
 
 ### What the CAAP and SNAP columns are
@@ -169,6 +217,16 @@ unweighted mean over ten thresholds, 0.50 to 0.95 in steps of 0.05.**
 * **SNAP** averages over the cosine similarity threshold tau, using
   **Sentence-BERT** (`all-MiniLM-L6-v2`, bare labels) as the text encoder --
   see *Why Sentence-BERT* below.
+* **SemLoc-AP** is the third metric and answers a question neither of the other
+  two can: *did we put an appropriate name on the object we actually
+  localised?* CAAP and SNAP can both be satisfied by one wrong prediction -- a
+  box on the dog labelled "cat", with a cat elsewhere in the image -- because
+  CAAP matches on IoU alone and SNAP on label alone. SemLoc-AP requires a
+  single ground-truth instance to satisfy both. It averages over the full
+  10x10 product of the CAAP IoU grid and the SNAP cosine grid rather than over
+  ten thresholds, so **its magnitude is not comparable to the other two**; it
+  is a separate axis, not a harder version of either. Full tables, threshold
+  matrices and the monotonicity diagnostic are in `reports/SEMLOC.md`.
 
 Both metrics use the same interval structure: `LO` = 0.50/0.55/0.60,
 `MI` = 0.65/0.70/0.75/0.80, `HI` = 0.85/0.90/0.95.
@@ -387,7 +445,7 @@ on it.
         keep = [r for r in v if r["score_source"] == "logprob_bbox"]
         sbv = {r["llm"]: r for r in (rd(f"{R}/snap_sbert.csv") or [])
                if r["stage"] == "vlm" and r["dataset"] == ds}
-        snap_col = ds != "coco_ood"
+        snap_col = has_semantic_labels(ds)
         hdr = (["model", "CAAP"] + (["SNAP"] if snap_col else [])
                + ["U-AP", "U-F1", "U-PRE", "det/img", "parse fails"])
         A(table(hdr,
@@ -462,6 +520,8 @@ larger gain over chance ({cen['best_gain']:+.4f} vs {raw['best_gain']:+.4f}).
 
 | file | contents |
 |---|---|
+| `results/semloc.csv` | SemLoc-AP, all 74 cells, with monotonicity diagnostics |
+| `results/semloc_matrices.json` | the full 10x10 threshold grid per cell |
 | `results/main_coco.csv` | Stage 1, CAAP + SNAP, capped and uncapped |
 | `results/main_lvis.csv` | Stage 3 |
 | `results/main_coco_ood.csv` | Stage 4 |

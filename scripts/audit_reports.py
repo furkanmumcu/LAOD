@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import collections
 import csv
+import glob
 import inspect
 import json
 import os
@@ -132,11 +133,46 @@ def main() -> int:
             check(f"{title} {metric} table matches source", bad == 0,
                   f"{bad} mismatched values")
 
-    print("\n=== 6. COCO-OOD SNAP is suppressed everywhere ===")
+    print("\n=== 6. COCO-OOD carries no SNAP or SemLoc-AP ===")
+    from laod.data.annotations import has_semantic_labels
+    check("the policy names coco_ood as unnamed",
+          not has_semantic_labels("coco_ood"))
+    check("and still names coco and lvis",
+          has_semantic_labels("coco") and has_semantic_labels("lvis"))
     for f in ("reports/RESULTS.md", "reports/INTERVALS.md"):
         t = open(f).read()
         check(f"{os.path.basename(f)} explains the omission",
-              "nothing to name" in t)
+              "nothing to name" in t or "no naming to score" in t)
+    # The prose check above passed for a year while the CSV shipped a SNAP
+    # column anyway, so check the artefact itself, not only what is said
+    # about it.
+    for f in sorted(glob.glob("results/*coco_ood*.csv")):
+        with open(f) as fh:
+            cols = next(csv.reader(fh))
+        snapcols = [c for c in cols if c.startswith("snap")]
+        check(f"{os.path.basename(f)} has no snap* column",
+              not snapcols, str(snapcols))
+    # snap_sbert.csv is the deliberate exception: its stage4 rows ARE the
+    # shuffle control that establishes the exclusion, carried alongside
+    # chance_* and gain_* columns and displayed by no report. Check it still
+    # reads as a null result rather than quietly becoming a number.
+    s4 = [r for r in sb if r["stage"] == "stage4"]
+    check("the COCO-OOD control in snap_sbert.csv is still null",
+          s4 and all(abs(r["snap_macro"]) < 1e-6 for r in s4),
+          f"max {max((abs(r['snap_macro']) for r in s4), default=-1):.6f}")
+
+    # Every entry point that can be pointed at a dataset must consult the
+    # policy. This is the check that would have caught phase3_vlm_coco_ood.csv.
+    for f in ("scripts/maxdets_compare.py", "scripts/semloc_all.py",
+              "scripts/report_stage.py", "scripts/rescore_vlm.py",
+              "scripts/run_vlm_detect.py", "run_benchmark.py",
+              "eval_metrics_only.py"):
+        check(f"{os.path.basename(f)} consults has_semantic_labels",
+              "has_semantic_labels" in open(f).read())
+    if os.path.exists("results/semloc.csv"):
+        check("semloc.csv has no coco_ood row",
+              not [r for r in load("results/semloc.csv")
+                   if r["dataset"] == "coco_ood"])
     ood = [r for r in sb if r["stage"] == "stage4"]
     check("and the data agrees it is meaningless",
           all(abs(r["gain_lo"]) < 0.01 for r in ood),
@@ -164,6 +200,75 @@ def main() -> int:
               if f"| {c['snap_maxdets']:.4f} " in r
               and abs(c["snap_maxdets"] - sb1[(c["llm"], c["detector"])]["snap_macro"]) > 1e-4]
     check("no CLIP SNAP value appears in RESULTS.md", not leaked, str(leaked[:3]))
+
+    print("\n=== 9. SemLoc-AP ===")
+    if not os.path.exists("results/semloc.csv"):
+        check("results/semloc.csv present", False, "run scripts/semloc_all.py")
+    else:
+        from laod.metrics.grids import CAAP_V2, SNAP_DISJOINT
+        from laod.metrics.semloc import (IOU_THRESHOLDS, SEM_THRESHOLDS,
+                                         SemLocEvaluator)
+        p = inspect.signature(SemLocEvaluator.__init__).parameters
+        check("SemLocEvaluator max_dets=100", p["max_dets"].default == 100,
+              f"got {p['max_dets'].default}")
+        check("SemLocEvaluator match_order='score'",
+              p["match_order"].default == "score",
+              f"got {p['match_order'].default}")
+
+        # SemLoc-AP is only interpretable against CAAP and SNAP if its two
+        # axes are the same thresholds those two are reported on. If either
+        # grid is ever retuned, this is the check that should fail.
+        check("IoU axis equals the CAAP grid",
+              tuple(IOU_THRESHOLDS) == tuple(CAAP_V2.macro),
+              f"{IOU_THRESHOLDS} vs {CAAP_V2.macro}")
+        check("cosine axis equals the SNAP grid",
+              tuple(SEM_THRESHOLDS) == tuple(SNAP_DISJOINT.macro),
+              f"{SEM_THRESHOLDS} vs {SNAP_DISJOINT.macro}")
+
+        sl = load("results/semloc.csv")
+        check("every cell used Sentence-BERT",
+              {r["encoder"] for r in sl} == {
+                  "sentence-transformers/all-MiniLM-L6-v2"},
+              str({r["encoder"] for r in sl}))
+        # invalid_labels counts detections whose label was *excluded* from
+        # semantic matching, so a nonzero count is the guard working rather
+        # than a defect -- MiniLM will embed the empty string and put it
+        # within 0.410 of a real name, which is exactly why the exclusion is
+        # explicit. What would be a defect is a large rate: before the
+        # Grounding DINO span fix ~96% of its retained boxes carried an empty
+        # name, so this bound is the tripwire for that regression returning.
+        # Measured at 20 of 16,205,448 detections, i.e. 1.2e-6.
+        inv = sum(float(r["invalid_labels"]) for r in sl)
+        tot = sum(float(r["detections"]) for r in sl)
+        rate = inv / tot if tot else 0.0
+        check("invalid labels are a negligible fraction (and were excluded)",
+              rate < 1e-4, f"{inv:.0f}/{tot:.0f} = {rate:.2e}")
+
+        if os.path.exists("results/semloc_matrices.json"):
+            mats = json.load(open("results/semloc_matrices.json"))
+            shapes = {(len(m["matrix"]), len(m["matrix"][0]))
+                      for m in mats.values()}
+            check("every stored matrix is 10x10", shapes == {(10, 10)},
+                  str(shapes))
+            keyed = [r["run"] for r in sl if r["run"] not in mats]
+            check("every scored cell has a stored matrix", not keyed,
+                  str(keyed[:3]))
+            # Monotonicity is a diagnostic, not an assumption: SemLoc-AP is
+            # not monotone by construction, so a rise is reported rather than
+            # asserted away. It has been 0 on every cell measured so far.
+            rises = [r["run"] for r in sl
+                     if float(r["rises_iou"]) or float(r["rises_sem"])]
+            check("no non-monotone cell (diagnostic, not a guarantee)",
+                  not rises, f"{len(rises)} cells rise: {rises[:3]}")
+
+        if os.path.exists("reports/RESULTS.md"):
+            r = open("reports/RESULTS.md").read()
+            by_run = {x["run"]: x for x in sl}
+            leaked = [k for k, v in by_run.items()
+                      if v["stage"] == "stage1"
+                      and f"| {float(v['semloc']):.4f} " not in r]
+            check("RESULTS.md SemLoc table matches semloc.csv",
+                  not leaked, f"{len(leaked)} absent: {leaked[:3]}")
 
     print("\n" + ("=" * 60))
     print(f"{len(FAILS)} failures" if FAILS else "ALL CHECKS PASSED")

@@ -12,7 +12,8 @@ PY="${PY:-python}"
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 echo $$ > outputs/lvis_ablation.pid
 LLMS="${LLMS:-gemma4-12b gemma4-e4b qwen35-9b}"
-# Gemma4-12B needs ~22 GB, so the label pass wants a card to itself.
+# gemma4-12b needs ~22 GB, so the LLM pass wants a card to itself. cuda:0
+# label pass wants a card to itself.
 DEV="${DEV:-cuda:0}"
 PROMPTS="${PROMPTS:-default minimal coco-specific}"
 for PROMPT in $PROMPTS; do

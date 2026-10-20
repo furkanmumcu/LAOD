@@ -30,7 +30,7 @@ from laod.device import pin_from_argv
 _PINNED = pin_from_argv()
 
 from laod.config import PATHS
-from laod.data.annotations import load_ground_truth
+from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.io.predictions import load_legacy_npy, load_predictions
 from laod.metrics.caap import CAAPEvaluator
 from laod.metrics.grids import CAAP_GRIDS, SNAP_GRIDS, SNAP_V2_TARGET_FMR
@@ -138,7 +138,11 @@ def main(argv: list[str] | None = None) -> int:
                            "per_threshold": {str(k): v for k, v in res.per_threshold.items()},
                            **summary}
 
-    if not args.no_snap:
+    if not args.no_snap and not has_semantic_labels(args.dataset):
+        print(f"\nSNAP skipped: {args.dataset} annotates every object under "
+              f"a single category, so there is no name to match against. "
+              f"Pass --no_snap to silence this.")
+    elif not args.no_snap:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder, calibrate_thresholds
 
         embedder = TextEmbedder(

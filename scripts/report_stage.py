@@ -21,11 +21,11 @@ from laod.device import pin_cuda_device
 DEV = pin_cuda_device(os.environ.get("LAOD_DEVICE", "cuda:1"))
 
 from laod.config import PATHS
-from laod.data.annotations import load_ground_truth
+from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.data.splits import apply_split
 from laod.io.run_store import load_run
 from laod.metrics.caap import CAAPEvaluator
-from laod.metrics.grids import CAAP_LEGACY, CAAP_V2, SNAP_LEGACY
+from laod.metrics.grids import CAAP_LEGACY, CAAP_V2, SNAP_DISJOINT
 
 ANN = {"coco": "coco_ann", "lvis": "lvis_ann", "coco_ood": "coco_ood_ann"}
 
@@ -99,10 +99,10 @@ def main() -> int:
             "caap": s["MACRO"], "caap50": res.per_threshold[0.50],
             "params": cfg.detector_params, "flags": flags,
         }
-        if args.snap:
+        if args.snap and has_semantic_labels(args.dataset):
             from laod.metrics.snap import SNAPEvaluator, TextEmbedder
             emb = TextEmbedder(device=DEV)
-            sn = SNAPEvaluator(gt, emb, grid=SNAP_LEGACY).evaluate(
+            sn = SNAPEvaluator(gt, emb, grid=SNAP_DISJOINT).evaluate(
                 preds, control=True, progress=False)
             sm = sn.summary()
             cell.update(snap_lo=sm["LO"], snap_mi=sm["MI"], snap_hi=sm["HI"],
@@ -129,7 +129,7 @@ def main() -> int:
                "CAAP_LO", "CAAP_MI", "CAAP_HI", "CAAP@.5:.95", "vocab"]), ""]
 
     if args.snap and "snap_macro" in cells[0]:
-        L += ["## SNAP (legacy grid, with label-shuffle control)", "",
+        L += ["## SNAP (Sentence-BERT, SNAP_DISJOINT grid, with label-shuffle control)", "",
               fmt([[c["llm"], c["detector"], f"{c['snap_lo']:.4f}", f"{c['snap_mi']:.4f}",
                     f"{c['snap_hi']:.4f}", f"{c['snap_macro']:.4f}",
                     f"{c['snap_gain_85']:+.4f}"]
@@ -190,6 +190,31 @@ def main() -> int:
                     for d in dets), ""]
     L += (["### Anomalies", ""] + [f"- {a}" for a in anomalies] + [""]) if anomalies \
         else ["No anomalies detected.", ""]
+
+    L += ["---", "",
+          f"*Regenerated {datetime.now():%Y-%m-%d}. The SNAP numbers in this "
+          "report differ from the version generated on 2026-10-02/05 because of "
+          "two corrections:*", "",
+          "1. **Grounding DINO label recovery.** Each box is now mapped to the "
+          "vocabulary entry that owns its highest-scoring text token, read "
+          "from the logits. The previous numbers used HuggingFace's decoded "
+          "phrase, which returned an empty name for ~96% of retained boxes and "
+          "fragments such as `'##et'` for `'tennis racket'` for most of the "
+          "rest. Boxes, scores and thresholds are unchanged -- CAAP and U-AP "
+          "are bit-identical -- so only SNAP moves, and only for the two "
+          "Grounding DINO backends. YOLO-World and OWLv2 associate a box to "
+          "its entry by integer index and were never affected.",
+          "",
+          "2. **SNAP grid.** This report now summarises SNAP on "
+          "`SNAP_DISJOINT` rather than `SNAP_LEGACY`, matching the headline "
+          "reports. The legacy grid put 0.65 in both LO and MI and included "
+          "tau=1.00 in HI, which requires near-identical embeddings and "
+          "deflated every SNAP_HI by about 22%. The threshold values are "
+          "otherwise unchanged, so the macro average is unaffected -- only the "
+          "LO / MI / HI columns move.",
+          "",
+          "*See `reports/RESULTS.md` for the headline tables and "
+          "`LABEL_AUDIT.md` for the backend-by-backend label audit.*", ""]
 
     out = args.out or (PATHS.root / "reports" / f"{args.stage}.md")
     out.parent.mkdir(parents=True, exist_ok=True)

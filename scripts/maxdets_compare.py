@@ -22,7 +22,7 @@ sys.path.insert(0, ".")
 import numpy as np
 
 from laod.config import PATHS
-from laod.data.annotations import load_ground_truth
+from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.data.splits import apply_split
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import load_run
@@ -57,7 +57,9 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--snap", action="store_true",
                     help="also score SNAP, which matches on label similarity "
-                         "alone and so has more to gain from extra detections")
+                         "alone and so has more to gain from extra detections. "
+                         "Ignored, with a notice, on datasets whose ground "
+                         "truth carries no object name")
     ap.add_argument("--device", default="cuda:0")
     args = ap.parse_args()
 
@@ -68,7 +70,15 @@ def main() -> int:
                                        args.dataset), "test")
     ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
     sev = None
-    if args.snap:
+    if args.snap and not has_semantic_labels(args.dataset):
+        # Skipped rather than scored as zero, and skipped rather than refused.
+        # Zero is a number a reader has to be talked out of; no column is not.
+        # And --snap is typically passed to the same loop over all three
+        # datasets, so refusing would break the two where it is meaningful.
+        print(f"--snap ignored: {args.dataset} annotates every object under a "
+              f"single category, so there is no name to match against. "
+              f"No snap* columns will be written.\n")
+    elif args.snap:
         from laod.metrics.snap import SNAPEvaluator, TextEmbedder
         sev = SNAPEvaluator(gt, TextEmbedder(device=args.device), grid=SNAP_LEGACY)
     dirs = sorted(d for d in glob.glob(pattern) if os.path.isdir(d))
@@ -105,7 +115,10 @@ def main() -> int:
                               progress=False).summary()["MACRO"]
             ss = sev.evaluate(cap, control=False, progress=False).summary()
             sc = ss["MACRO"]
-            sd = (sc / sf - 1) * 100
+            # A cell can legitimately score 0 -- no prediction reached tau
+            # against any ground-truth name -- and the cap cannot change 0,
+            # so report the delta as 0 rather than dividing by it.
+            sd = (sc / sf - 1) * 100 if sf else 0.0
             row.update(snap=round(sf, 4), snap_maxdets=round(sc, 4),
                        snap_lo=round(ss["LO"], 4), snap_mi=round(ss["MI"], 4),
                        snap_hi=round(ss["HI"], 4), snap_delta_pct=round(sd, 2))

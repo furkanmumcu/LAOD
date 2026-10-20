@@ -9,8 +9,8 @@ fine-tuned and no category list is supplied at inference time.
 
 This repository contains the full implementation and the code to reproduce
 every number in the paper. It evaluates **7 MLLMs x 4 open-vocabulary
-detectors** on COCO-Val, LVIS-minival and COCO-OOD, and includes the two
-metrics introduced in the paper, CAAP and SNAP.
+detectors** on COCO-Val, LVIS-minival and COCO-OOD, and includes the three
+metrics introduced in the paper: CAAP, SNAP and SemLoc-AP.
 
 > Datasets and model weights are **not** included — they are downloaded from
 > their original sources, see [Data](#data). Everything else needed to
@@ -23,7 +23,7 @@ git clone https://github.com/furkanmumcu/LAOD.git && cd LAOD
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # add HF_TOKEN only if you use gated models
-pytest tests/ -q              # 106 pass; 5 skip until data is provisioned
+pytest tests/ -q              # 123 pass; 6 skip until data is provisioned
 ```
 
 A CUDA GPU is required for the model passes. Gemma4-12B needs ~22 GB; the rest
@@ -89,8 +89,9 @@ maps to one command:
 | Fig. 3 — CAAP/SNAP, 28 MLLM x detector cells on COCO-Val | `run_benchmark.py --dataset coco` then `scripts/maxdets_compare.py` |
 | LVIS-minival | `--dataset lvis` |
 | COCO-OOD, U-AP/U-F1/U-PRE/U-REC | `--dataset coco_ood` then `scripts/uap_pipeline_ood.py` |
+| Tables 8, 10 — SemLoc-AP threshold marginals | `scripts/semloc_all.py` then `scripts/build_semloc_report.py` |
 | MLLMs as direct detectors | `scripts/run_vlm_detect.py` |
-| Table 4 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` |
+| Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` |
 | Fig. 6 — qualitative | `scripts/pick_qualitative.py`, then the two render scripts |
 
 The `results/` directory ships the frozen split id lists and our own output
@@ -99,10 +100,11 @@ match.
 
 ## Evaluation protocol
 
-Three conventions apply to every metric and are the defaults in code:
+Four conventions apply to every metric and are the defaults in code:
 
 - **maxDets = 100.** The top 100 detections per image by confidence, applied
-  once to the prediction list so CAAP, SNAP and U-AP see the identical set.
+  once to the prediction list so CAAP, SNAP, SemLoc-AP and U-AP see the
+  identical set.
 - **Matching visits predictions by descending confidence.** One-to-one; each
   prediction takes the best unclaimed ground truth.
 - **SNAP uses Sentence-BERT** (`all-MiniLM-L6-v2`, bare labels). CLIP's text
@@ -110,20 +112,74 @@ Three conventions apply to every metric and are the defaults in code:
   threshold of 0.50 admits every pair and the metric stops measuring naming;
   a label-shuffle control reproduces the score exactly. Sentence-BERT is
   trained for text-text similarity and does not have this failure.
+- **Grounding DINO labels are read from the logits, not from the decoded
+  phrase.** A box's confidence is the maximum over its (query, text-token)
+  row, so the vocabulary entry owning that winning token is the entry the box
+  grounds to. HuggingFace's post-processor instead rebuilds a phrase from the
+  tokens above `text_threshold`, which at our operating point (score 0.03,
+  text 0.30) returned an **empty** name for ~96% of retained boxes and
+  fragments such as `'##et'` for `'tennis racket'` for most of the rest. We
+  map each box to its owning entry — located by character offset, so an entry
+  containing a period stays intact — and return the exact supplied string.
+  Boxes, scores and thresholds are unchanged by construction: across all 36
+  re-detected cells, boxes and scores are bit-identical and CAAP and U-AP
+  move by 0.0000 (`results/relabel_verification.csv`). Only SNAP changes, and
+  only on the two Grounding DINO backends; YOLO-World and OWLv2 associate a
+  box to its entry by integer index and were never affected. See
+  [LABEL_AUDIT.md](LABEL_AUDIT.md).
 
 CAAP and SNAP share one interval structure: `LO` 0.50/0.55/0.60,
 `MI` 0.65/0.70/0.75/0.80, `HI` 0.85/0.90/0.95, with the headline score the
 unweighted mean over all ten thresholds.
+
+### SemLoc-AP
+
+CAAP asks whether an object was localised; SNAP asks whether the names were
+appropriate. Neither asks whether those two successes happened on the **same
+object**, and a box tightly on a dog but labelled `cat` satisfies both when a
+cat exists elsewhere in the image. SemLoc-AP counts a prediction only when one
+unmatched ground-truth instance satisfies both criteria at once:
+
+```
+IoU(box_i, box_j) >= theta   and   sim(label_i, label_j) >= tau
+```
+
+It is scored over the full 10×10 grid — the CAAP IoU thresholds against the
+SNAP cosine thresholds — and reported as the mean over all 100 pairs. It is a
+**pooled AP, not a per-class mAP**: detections are ranked once across the
+dataset, so the numbers are not comparable in magnitude with published COCO
+mAP, nor with CAAP or SNAP. `results/semloc_matrices.json` ships the full
+matrix for every cell.
+
+**SNAP and SemLoc-AP are not defined on COCO-OOD.** That dataset annotates
+every object under one category, `unknow object`, so there is no name to match
+against. Every entry point that accepts a dataset consults
+`has_semantic_labels()` in `laod/data/annotations.py` and emits no columns
+rather than filling them with zeros. Read COCO-OOD on U-AP, which is what it
+was built for.
+
+The one deliberate exception is `results/snap_sbert.csv`, which keeps 28
+COCO-OOD rows. Those are not a result — they are the **shuffle control that
+establishes the exclusion**, carried next to `chance_*` and `gain_*` columns
+and reading `0.0000` throughout. No report displays them. They are the
+evidence, so removing them would remove the proof.
+
+Worth stating plainly, because the failure mode is silent and the output looks
+like a measurement: scored against `unknow object` under **CLIP** text
+embeddings, SNAP on COCO-OOD returns ~0.55 across all 28 cells. That number is
+entirely CLIP's cone effect, and CLIP's own label-shuffle control reproduces
+it to four decimals.
 
 ## Layout
 
 ```
 laod/            the package: metrics, data, models, IO, visualisation
 scripts/         tuning, scoring, report and figure generation
-tests/           111 tests
+tests/           129 tests
 results/         frozen splits + our output tables
 run_benchmark.py       generate vocabularies and ground them
 eval_metrics_only.py   score an existing prediction file
+LABEL_AUDIT.md         how each detector associates a box to a vocabulary entry
 ```
 
 ## Citation

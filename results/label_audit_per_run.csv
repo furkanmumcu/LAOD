@@ -1,0 +1,147 @@
+run,detector,dataset,llm,images,detections,empty_pct,offvocab_pct,multiword_pct,top_offvocab
+coco-ablation-loop-high-both__gemma3-4b__yolo-world__default,yolo-world,coco-ablation-loop-high-both,gemma3-4b,500,43053,0.0,100.0,6.826,'people'x3881; 'flowers'x923; 'chairs'x821
+coco-ablation-loop-high-both__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-high-both,gemma4-12b,500,90094,91.337,8.663,1.099,'person'x272; 'shoes'x187; 'chair'x128
+coco-ablation-loop-high-both__internvl3-8b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-high-both,internvl3-8b,500,62949,89.976,10.024,1.639,'people'x191; 'chairs'x150; 'trees'x145
+coco-ablation-loop-high-both__internvl3-8b__yolo-world__default,yolo-world,coco-ablation-loop-high-both,internvl3-8b,500,47332,0.0,100.0,16.374,'people'x2904; 'chairs'x1599; 'trees'x901
+coco-ablation-loop-high-both__qwen25-vl-7b__yolo-world__default,yolo-world,coco-ablation-loop-high-both,qwen25-vl-7b,500,46285,0.0,100.0,13.691,'people'x2552; 'chairs'x1352; 'person'x1273
+coco-ablation-loop-high-both__qwen35-9b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-high-both,qwen35-9b,500,56458,88.905,11.095,1.452,'person'x194; 'chair'x151; 'man'x126
+coco-ablation-loop-low-both__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-low-both,gemma4-12b,500,88090,90.761,9.239,1.2,'person'x273; 'shoes'x189; 'chair'x136
+coco-ablation-loop-low-both__internvl3-8b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-low-both,internvl3-8b,500,60917,89.254,10.746,1.77,'people'x191; 'chairs'x153; 'trees'x146
+coco-ablation-loop-low-both__internvl3-8b__yolo-world__default,yolo-world,coco-ablation-loop-low-both,internvl3-8b,500,46830,0.0,100.0,16.389,'people'x2874; 'chairs'x1575; 'trees'x895
+coco-ablation-loop-low-both__qwen25-vl-7b__yolo-world__default,yolo-world,coco-ablation-loop-low-both,qwen25-vl-7b,500,45894,0.0,100.0,13.747,'people'x2533; 'chairs'x1351; 'person'x1265
+coco-ablation-loop-low-both__qwen35-9b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-low-both,qwen35-9b,500,54295,87.875,12.125,1.612,'person'x199; 'chair'x162; 'car'x130
+coco-ablation-loop-low-discard_only__gemma3-4b__yolo-world__default,yolo-world,coco-ablation-loop-low-discard_only,gemma3-4b,500,42683,0.0,100.0,6.822,'people'x3864; 'flowers'x913; 'chairs'x811
+coco-ablation-loop-low-discard_only__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-low-discard_only,gemma4-12b,500,88090,90.761,9.239,1.2,'person'x273; 'shoes'x189; 'chair'x136
+coco-ablation-loop-low-refine_only__gemma3-4b__yolo-world__default,yolo-world,coco-ablation-loop-low-refine_only,gemma3-4b,500,43372,0.0,100.0,6.82,'people'x3883; 'flowers'x923; 'chairs'x821
+coco-ablation-loop-low-refine_only__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-ablation-loop-low-refine_only,gemma4-12b,500,90865,91.038,8.962,1.163,'person'x273; 'shoes'x189; 'chair'x136
+coco-ablation-loop-low__gemma3-4b__yolo-world__default,yolo-world,coco-ablation-loop-low,gemma3-4b,500,42683,0.0,100.0,6.822,'people'x3864; 'flowers'x913; 'chairs'x811
+coco-test-ablation__gemma3-4b__yolo-world__coco-specific,yolo-world,coco-test-ablation,gemma3-4b,500,40254,0.0,0.0,1.866,
+coco-test-ablation__gemma3-4b__yolo-world__default,yolo-world,coco-test-ablation,gemma3-4b,500,43372,0.0,0.0,6.82,
+coco-test-ablation__gemma3-4b__yolo-world__minimal,yolo-world,coco-test-ablation,gemma3-4b,500,44363,0.0,0.0,8.868,
+coco-test-ablation__gemma4-12b__yolo-world__coco-specific,yolo-world,coco-test-ablation,gemma4-12b,500,48860,0.0,0.0,3.135,
+coco-test-ablation__gemma4-12b__yolo-world__default,yolo-world,coco-test-ablation,gemma4-12b,500,59154,0.0,0.0,13.715,
+coco-test-ablation__gemma4-12b__yolo-world__minimal,yolo-world,coco-test-ablation,gemma4-12b,500,62894,0.0,0.0,13.701,
+coco-test-ablation__gemma4-e2b__yolo-world__coco-specific,yolo-world,coco-test-ablation,gemma4-e2b,500,20755,0.0,0.0,1.672,
+coco-test-ablation__gemma4-e2b__yolo-world__default,yolo-world,coco-test-ablation,gemma4-e2b,500,24300,0.0,0.0,6.885,
+coco-test-ablation__gemma4-e2b__yolo-world__minimal,yolo-world,coco-test-ablation,gemma4-e2b,500,24600,0.0,0.0,10.402,
+coco-test-ablation__gemma4-e4b__yolo-world__coco-specific,yolo-world,coco-test-ablation,gemma4-e4b,500,26259,0.0,0.0,3.774,
+coco-test-ablation__gemma4-e4b__yolo-world__default,yolo-world,coco-test-ablation,gemma4-e4b,500,27441,0.0,0.0,12.124,
+coco-test-ablation__gemma4-e4b__yolo-world__minimal,yolo-world,coco-test-ablation,gemma4-e4b,500,29394,0.0,0.0,12.894,
+coco-test-ablation__internvl3-8b__yolo-world__coco-specific,yolo-world,coco-test-ablation,internvl3-8b,500,40680,0.0,0.0,7.107,
+coco-test-ablation__internvl3-8b__yolo-world__default,yolo-world,coco-test-ablation,internvl3-8b,500,47705,0.0,0.0,16.411,
+coco-test-ablation__internvl3-8b__yolo-world__minimal,yolo-world,coco-test-ablation,internvl3-8b,500,47086,0.0,0.0,21.956,
+coco-test-ablation__qwen25-vl-7b__yolo-world__coco-specific,yolo-world,coco-test-ablation,qwen25-vl-7b,500,41635,0.0,0.0,9.122,
+coco-test-ablation__qwen25-vl-7b__yolo-world__default,yolo-world,coco-test-ablation,qwen25-vl-7b,500,47133,0.0,0.0,13.767,
+coco-test-ablation__qwen25-vl-7b__yolo-world__minimal,yolo-world,coco-test-ablation,qwen25-vl-7b,500,42372,0.0,0.0,13.407,
+coco-test-ablation__qwen35-9b__yolo-world__coco-specific,yolo-world,coco-test-ablation,qwen35-9b,500,44380,0.0,0.0,7.467,
+coco-test-ablation__qwen35-9b__yolo-world__default,yolo-world,coco-test-ablation,qwen35-9b,500,47083,0.0,0.0,13.625,
+coco-test-ablation__qwen35-9b__yolo-world__minimal,yolo-world,coco-test-ablation,qwen35-9b,500,50371,0.0,0.0,14.492,
+coco-test-fixed80__none__gdino-base__cls80,gdino-base,coco-test-fixed80,none,4500,855366,95.279,0.004,0.479,'##bag'x5; '##ut'x5; '##brush'x4
+coco-test-fixed80__none__gdino-tiny__cls80,gdino-tiny,coco-test-fixed80,none,4500,993618,95.362,0.004,0.363,'##isbee'x12; '##bag'x9; '##nt'x6
+coco-test__gemma3-4b__gdino-base__default,gdino-base,coco-test,gemma3-4b,4500,1780090,96.685,0.016,0.225,'##s'x66; 't - shirt'x22; '##uts'x13
+coco-test__gemma3-4b__gdino-tiny__default,gdino-tiny,coco-test,gemma3-4b,4500,1863207,97.109,0.017,0.209,'##s'x111; 't - shirt'x22; '##board'x10
+coco-test__gemma3-4b__owlv2-base__default,owlv2-base,coco-test,gemma3-4b,4500,1654672,0.0,0.0,7.529,
+coco-test__gemma3-4b__yolo-world__default,yolo-world,coco-test,gemma3-4b,4500,387001,0.0,0.0,7.695,
+coco-test__gemma4-12b__gdino-base__default,gdino-base,coco-test,gemma4-12b,4500,2064641,96.537,0.023,0.447,'##s'x72; 't - shirt'x64; 'catcher mask'x24
+coco-test__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-test,gemma4-12b,4500,2213068,96.866,0.025,0.431,'##s'x112; 't - shirt'x61; '##board'x28
+coco-test__gemma4-12b__owlv2-base__default,owlv2-base,coco-test,gemma4-12b,4500,1974782,0.0,0.0,15.754,
+coco-test__gemma4-12b__yolo-world__default,yolo-world,coco-test,gemma4-12b,4500,487214,0.0,0.0,15.594,
+coco-test__gemma4-e2b__gdino-base__default,gdino-base,coco-test,gemma4-e2b,4500,914558,96.465,0.012,0.266,'##s'x27; 't - shirt'x27; '##ries'x8
+coco-test__gemma4-e2b__gdino-tiny__default,gdino-tiny,coco-test,gemma4-e2b,4500,894825,96.567,0.013,0.258,'##s'x33; 't - shirt'x27; '##board'x7
+coco-test__gemma4-e2b__owlv2-base__default,owlv2-base,coco-test,gemma4-e2b,4500,1005262,0.0,0.0,9.923,
+coco-test__gemma4-e2b__yolo-world__default,yolo-world,coco-test,gemma4-e2b,4500,204206,0.0,0.0,8.579,
+coco-test__gemma4-e4b__gdino-base__default,gdino-base,coco-test,gemma4-e4b,4500,999137,96.21,0.018,0.434,'t - shirt'x42; '##s'x33; '##uts'x10
+coco-test__gemma4-e4b__gdino-tiny__default,gdino-tiny,coco-test,gemma4-e4b,4500,990325,96.29,0.018,0.439,'t - shirt'x39; '##s'x34; '##board'x9
+coco-test__gemma4-e4b__owlv2-base__default,owlv2-base,coco-test,gemma4-e4b,4500,1141399,0.0,0.0,14.72,
+coco-test__gemma4-e4b__yolo-world__default,yolo-world,coco-test,gemma4-e4b,4500,243546,0.0,0.0,12.755,
+coco-test__internvl3-8b__gdino-base__default,gdino-base,coco-test,internvl3-8b,4500,1741259,96.553,0.023,0.54,'##s'x70; 't - shirt'x42; 'catcher mask'x16
+coco-test__internvl3-8b__gdino-tiny__default,gdino-tiny,coco-test,internvl3-8b,4500,1790799,96.793,0.025,0.53,'##s'x83; 't - shirt'x44; '##board'x18
+coco-test__internvl3-8b__owlv2-base__default,owlv2-base,coco-test,internvl3-8b,4500,1640037,0.0,0.0,20.728,
+coco-test__internvl3-8b__yolo-world__default,yolo-world,coco-test,internvl3-8b,4500,415334,0.0,0.0,19.039,
+coco-test__qwen25-vl-7b__gdino-base__default,gdino-base,coco-test,qwen25-vl-7b,4500,1682987,96.605,0.026,0.451,'##s'x63; 't - shirt'x29; 'person hand'x19
+coco-test__qwen25-vl-7b__gdino-tiny__default,gdino-tiny,coco-test,qwen25-vl-7b,4500,1742323,96.837,0.029,0.446,'##s'x63; 't - shirt'x29; 'person hand'x18
+coco-test__qwen25-vl-7b__owlv2-base__default,owlv2-base,coco-test,qwen25-vl-7b,4500,1576241,0.0,0.0,17.356,
+coco-test__qwen25-vl-7b__yolo-world__default,yolo-world,coco-test,qwen25-vl-7b,4500,412744,0.0,0.0,15.643,
+coco-test__qwen35-9b__gdino-base__default,gdino-base,coco-test,qwen35-9b,4500,1600061,96.249,0.02,0.499,'t - shirt'x62; '##s'x43; 'flip - flops'x9
+coco-test__qwen35-9b__gdino-tiny__default,gdino-tiny,coco-test,qwen35-9b,4500,1616218,96.431,0.021,0.487,'t - shirt'x60; '##s'x48; 'bottle bottles'x8
+coco-test__qwen35-9b__owlv2-base__default,owlv2-base,coco-test,qwen35-9b,4500,1563771,0.0,0.0,16.086,
+coco-test__qwen35-9b__yolo-world__default,yolo-world,coco-test,qwen35-9b,4500,400410,0.0,0.0,14.392,
+coco-tune-fixed80__none__gdino-tiny__cls80,gdino-tiny,coco-tune-fixed80,none,500,114393,95.16,0.003,0.399,'##nt'x1; '##bag'x1; '##board'x1
+coco-tune-fixed80__none__gdino-tiny__cls80-text_threshold0.03,gdino-tiny,coco-tune-fixed80,none,500,114393,0.0,0.169,5.902,'##bag'x73; '##board'x23; '##ted plant'x22
+coco-tune__gemma3-4b__gdino-base__default,gdino-base,coco-tune,gemma3-4b,500,117417,94.215,0.029,0.399,'##s'x11; '##ries'x2; 't - shirt'x2
+coco-tune__gemma3-4b__gdino-tiny__default,gdino-tiny,coco-tune,gemma3-4b,500,64276,90.283,0.058,0.727,'##s'x12; '##bi'x3; '##bikes'x2
+coco-tune__gemma3-4b__owlv2-base__default,owlv2-base,coco-tune,gemma3-4b,500,15242,0.0,0.0,7.191,
+coco-tune__gemma3-4b__yolo-world__default,yolo-world,coco-tune,gemma3-4b,500,44634,0.0,0.0,7.541,
+coco-tune__gemma4-12b__gdino-base__default,gdino-base,coco-tune,gemma4-12b,500,149599,94.266,0.031,0.674,'##s'x9; '##eats'x4; 't - shirt'x3
+coco-tune__gemma4-12b__gdino-tiny__default,gdino-tiny,coco-tune,gemma4-12b,500,93164,90.864,0.054,1.137,'##s'x12; 't - shirt'x7; '##ers'x4
+coco-tune__gemma4-12b__owlv2-base__default,owlv2-base,coco-tune,gemma4-12b,500,20030,0.0,0.0,15.637,
+coco-tune__gemma4-12b__yolo-world__default,yolo-world,coco-tune,gemma4-12b,500,54968,0.0,0.0,15.232,
+coco-tune__gemma4-e2b__gdino-base__default,gdino-base,coco-tune,gemma4-e2b,500,56367,93.402,0.023,0.49,'##s'x4; '##ils'x3; '##board'x1
+coco-tune__gemma4-e2b__gdino-tiny__default,gdino-tiny,coco-tune,gemma4-e2b,500,28892,87.616,0.045,0.883,'##s'x3; '##licans'x2; '##berries'x1
+coco-tune__gemma4-e2b__owlv2-base__default,owlv2-base,coco-tune,gemma4-e2b,500,9026,0.0,0.0,10.691,
+coco-tune__gemma4-e2b__yolo-world__default,yolo-world,coco-tune,gemma4-e2b,500,23972,0.0,0.0,8.093,
+coco-tune__gemma4-e4b__gdino-base__default,gdino-base,coco-tune,gemma4-e4b,500,65652,93.063,0.032,0.705,'##s'x5; 't - shirt'x5; '##ware'x3
+coco-tune__gemma4-e4b__gdino-tiny__default,gdino-tiny,coco-tune,gemma4-e4b,500,34794,87.437,0.055,1.348,'t - shirt'x5; '##ware'x2; '##s'x2
+coco-tune__gemma4-e4b__owlv2-base__default,owlv2-base,coco-tune,gemma4-e4b,500,10860,0.0,0.0,11.538,
+coco-tune__gemma4-e4b__yolo-world__default,yolo-world,coco-tune,gemma4-e4b,500,28493,0.0,0.0,9.981,
+coco-tune__internvl3-8b__gdino-base__default,gdino-base,coco-tune,internvl3-8b,500,117612,93.928,0.026,0.857,'##s'x8; 't - shirt'x5; '##lights'x3
+coco-tune__internvl3-8b__gdino-tiny__default,gdino-tiny,coco-tune,internvl3-8b,500,66916,89.744,0.07,1.539,'##s'x11; 't - shirt'x6; '##board'x4
+coco-tune__internvl3-8b__owlv2-base__default,owlv2-base,coco-tune,internvl3-8b,500,16254,0.0,0.0,17.706,
+coco-tune__internvl3-8b__yolo-world__default,yolo-world,coco-tune,internvl3-8b,500,47635,0.0,0.0,18.795,
+coco-tune__qwen25-vl-7b__gdino-base__default,gdino-base,coco-tune,qwen25-vl-7b,500,114957,94.091,0.057,0.719,'person hand'x7; '##s'x5; 'person feet'x4
+coco-tune__qwen25-vl-7b__gdino-tiny__default,gdino-tiny,coco-tune,qwen25-vl-7b,500,65765,90.112,0.096,1.359,'person hand'x8; '##s'x4; 'catcher gear'x4
+coco-tune__qwen25-vl-7b__owlv2-base__default,owlv2-base,coco-tune,qwen25-vl-7b,500,15381,0.0,0.0,16.943,
+coco-tune__qwen25-vl-7b__yolo-world__default,yolo-world,coco-tune,qwen25-vl-7b,500,45935,0.0,0.0,15.398,
+coco-tune__qwen35-9b__gdino-base__default,gdino-base,coco-tune,qwen35-9b,500,107810,93.433,0.041,0.818,'t - shirt'x11; '##s'x8; '##eats'x3
+coco-tune__qwen35-9b__gdino-tiny__default,gdino-tiny,coco-tune,qwen35-9b,500,57913,88.452,0.078,1.495,'t - shirt'x10; '##s'x6; '##board'x5
+coco-tune__qwen35-9b__owlv2-base__default,owlv2-base,coco-tune,qwen35-9b,500,15818,0.0,0.0,15.16,
+coco-tune__qwen35-9b__yolo-world__default,yolo-world,coco-tune,qwen35-9b,500,46018,0.0,0.0,14.757,
+coco_ood-test__gemma3-4b__gdino-base__default,gdino-base,coco_ood-test,gemma3-4b,438,157982,97.808,0.009,0.175,'##s'x4; '##oni'x2; '##tick'x2
+coco_ood-test__gemma3-4b__gdino-tiny__default,gdino-tiny,coco_ood-test,gemma3-4b,438,149055,97.902,0.009,0.186,'##s'x6; '##raffe'x2; '##steria'x1
+coco_ood-test__gemma3-4b__owlv2-base__default,owlv2-base,coco_ood-test,gemma3-4b,438,94703,0.0,0.0,6.456,
+coco_ood-test__gemma3-4b__yolo-world__default,yolo-world,coco_ood-test,gemma3-4b,438,15079,0.0,0.0,11.128,
+coco_ood-test__gemma4-12b__gdino-base__default,gdino-base,coco_ood-test,gemma4-12b,438,182058,97.844,0.015,0.338,'##s'x4; '##ito'x2; '##sk'x1
+coco_ood-test__gemma4-12b__gdino-tiny__default,gdino-tiny,coco_ood-test,gemma4-12b,438,183567,98.044,0.013,0.328,'##s'x3; '##board'x3; '##raffe'x2
+coco_ood-test__gemma4-12b__owlv2-base__default,owlv2-base,coco_ood-test,gemma4-12b,438,105611,0.0,0.0,13.293,
+coco_ood-test__gemma4-12b__yolo-world__default,yolo-world,coco_ood-test,gemma4-12b,438,17976,0.0,0.0,19.409,
+coco_ood-test__gemma4-e2b__gdino-base__default,gdino-base,coco_ood-test,gemma4-e2b,438,76055,97.328,0.011,0.263,'##s'x2; '##llard'x2; '##ni'x2
+coco_ood-test__gemma4-e2b__gdino-tiny__default,gdino-tiny,coco_ood-test,gemma4-e2b,438,63589,96.841,0.011,0.293,'##raffe'x3; 'coca - cola'x1; '##sley'x1
+coco_ood-test__gemma4-e2b__owlv2-base__default,owlv2-base,coco_ood-test,gemma4-e2b,438,55845,0.0,0.0,11.627,
+coco_ood-test__gemma4-e2b__yolo-world__default,yolo-world,coco_ood-test,gemma4-e2b,438,7566,0.0,0.0,10.97,
+coco_ood-test__gemma4-e4b__gdino-base__default,gdino-base,coco_ood-test,gemma4-e4b,438,72991,96.979,0.01,0.469,'##sks'x3; 't - shirt'x1; '##llar'x1
+coco_ood-test__gemma4-e4b__gdino-tiny__default,gdino-tiny,coco_ood-test,gemma4-e4b,438,61496,96.505,0.008,0.548,'##er'x1; 't - shirt'x1; '##sk'x1
+coco_ood-test__gemma4-e4b__owlv2-base__default,owlv2-base,coco_ood-test,gemma4-e4b,438,56049,0.0,0.0,12.989,
+coco_ood-test__gemma4-e4b__yolo-world__default,yolo-world,coco_ood-test,gemma4-e4b,438,8078,0.0,0.0,18.656,
+coco_ood-test__internvl3-8b__gdino-base__default,gdino-base,coco_ood-test,internvl3-8b,438,130960,97.521,0.011,0.447,'##s'x2; '##p'x2; '##ono'x2
+coco_ood-test__internvl3-8b__gdino-tiny__default,gdino-tiny,coco_ood-test,internvl3-8b,438,119104,97.451,0.011,0.467,'##s'x4; '##ucet'x1; 'snake - shaped object'x1
+coco_ood-test__internvl3-8b__owlv2-base__default,owlv2-base,coco_ood-test,internvl3-8b,438,82650,0.0,0.0,21.356,
+coco_ood-test__internvl3-8b__yolo-world__default,yolo-world,coco_ood-test,internvl3-8b,438,13923,0.0,0.0,22.962,
+coco_ood-test__qwen25-vl-7b__gdino-base__default,gdino-base,coco_ood-test,qwen25-vl-7b,438,118164,97.463,0.017,0.41,'##s'x9; 'balls ( and )'x2; 'balls )'x2
+coco_ood-test__qwen25-vl-7b__gdino-tiny__default,gdino-tiny,coco_ood-test,qwen25-vl-7b,438,108401,97.419,0.015,0.446,'##s'x4; 'person legs'x2; '##our signs'x2
+coco_ood-test__qwen25-vl-7b__owlv2-base__default,owlv2-base,coco_ood-test,qwen25-vl-7b,438,75385,0.0,0.0,21.45,
+coco_ood-test__qwen25-vl-7b__yolo-world__default,yolo-world,coco_ood-test,qwen25-vl-7b,438,13235,0.0,0.0,21.896,
+coco_ood-test__qwen35-9b__gdino-base__default,gdino-base,coco_ood-test,qwen35-9b,438,123416,97.312,0.019,0.454,'##s'x3; 'person legs'x1; '##delion'x1
+coco_ood-test__qwen35-9b__gdino-tiny__default,gdino-tiny,coco_ood-test,qwen35-9b,438,111352,97.28,0.014,0.492,'person legs'x2; 'brush brush holder'x1; '##post'x1
+coco_ood-test__qwen35-9b__owlv2-base__default,owlv2-base,coco_ood-test,qwen35-9b,438,83010,0.0,0.0,17.633,
+coco_ood-test__qwen35-9b__yolo-world__default,yolo-world,coco_ood-test,qwen35-9b,438,12350,0.0,0.0,21.603,
+lvis-test-ablation__gemma4-12b__yolo-world__coco-specific,yolo-world,lvis-test-ablation,gemma4-12b,500,44020,0.0,0.0,4.925,
+lvis-test-ablation__gemma4-12b__yolo-world__default,yolo-world,lvis-test-ablation,gemma4-12b,500,51698,0.0,0.0,14.397,
+lvis-test-ablation__gemma4-12b__yolo-world__minimal,yolo-world,lvis-test-ablation,gemma4-12b,500,56557,0.0,0.0,15.197,
+lvis-test-ablation__gemma4-e4b__yolo-world__coco-specific,yolo-world,lvis-test-ablation,gemma4-e4b,500,22415,0.0,0.0,4.747,
+lvis-test-ablation__gemma4-e4b__yolo-world__default,yolo-world,lvis-test-ablation,gemma4-e4b,500,24649,0.0,0.0,13.506,
+lvis-test-ablation__gemma4-e4b__yolo-world__minimal,yolo-world,lvis-test-ablation,gemma4-e4b,500,25152,0.0,0.0,17.498,
+lvis-test-ablation__qwen35-9b__yolo-world__coco-specific,yolo-world,lvis-test-ablation,qwen35-9b,500,39205,0.0,0.0,9.407,
+lvis-test-ablation__qwen35-9b__yolo-world__default,yolo-world,lvis-test-ablation,qwen35-9b,500,41518,0.0,0.0,13.247,
+lvis-test-ablation__qwen35-9b__yolo-world__minimal,yolo-world,lvis-test-ablation,qwen35-9b,500,47148,0.0,0.0,15.564,
+lvis-test__gemma4-12b__gdino-base__default,gdino-base,lvis-test,gemma4-12b,4327,1984455,96.502,0.023,0.452,'##s'x71; 't - shirt'x63; 'catcher mask'x24
+lvis-test__gemma4-12b__gdino-tiny__default,gdino-tiny,lvis-test,gemma4-12b,4327,2130332,96.832,0.025,0.436,'##s'x104; 't - shirt'x60; '##board'x28
+lvis-test__gemma4-12b__owlv2-base__default,owlv2-base,lvis-test,gemma4-12b,4327,1917139,0.0,0.0,15.699,
+lvis-test__gemma4-12b__yolo-world__default,yolo-world,lvis-test,gemma4-12b,4327,477417,0.0,0.0,15.52,
+lvis-test__gemma4-e4b__gdino-base__default,gdino-base,lvis-test,gemma4-e4b,4327,963856,96.175,0.019,0.436,'t - shirt'x42; '##s'x33; '##uts'x10
+lvis-test__gemma4-e4b__gdino-tiny__default,gdino-tiny,lvis-test,gemma4-e4b,4327,957856,96.261,0.019,0.438,'t - shirt'x39; '##s'x34; '##board'x9
+lvis-test__gemma4-e4b__owlv2-base__default,owlv2-base,lvis-test,gemma4-e4b,4327,1109150,0.0,0.0,14.553,
+lvis-test__gemma4-e4b__yolo-world__default,yolo-world,lvis-test,gemma4-e4b,4327,239370,0.0,0.0,12.698,
+lvis-test__qwen35-9b__gdino-base__default,gdino-base,lvis-test,qwen35-9b,4327,1541902,96.216,0.021,0.501,'t - shirt'x62; '##s'x41; 'flip - flops'x9
+lvis-test__qwen35-9b__gdino-tiny__default,gdino-tiny,lvis-test,qwen35-9b,4327,1559029,96.397,0.021,0.489,'t - shirt'x60; '##s'x48; 'bottle bottles'x8
+lvis-test__qwen35-9b__owlv2-base__default,owlv2-base,lvis-test,qwen35-9b,4327,1518900,0.0,0.0,15.946,
+lvis-test__qwen35-9b__yolo-world__default,yolo-world,lvis-test,qwen35-9b,4327,392077,0.0,0.0,14.299,

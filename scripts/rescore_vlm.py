@@ -19,7 +19,7 @@ sys.path.insert(0, ".")
 import numpy as np
 
 from laod.config import PATHS
-from laod.data.annotations import load_ground_truth
+from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.data.splits import apply_split
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import load_run
@@ -81,8 +81,15 @@ def main() -> int:
     gt = apply_split(load_ground_truth(getattr(PATHS, ANN[args.dataset]),
                                        args.dataset), "test")
     ev = CAAPEvaluator(gt, CAAP_V2.all_thresholds)
-    from laod.metrics.snap import SNAPEvaluator, TextEmbedder
-    sev = SNAPEvaluator(gt, TextEmbedder(device=args.device), grid=SNAP_LEGACY)
+    sev = None
+    if not has_semantic_labels(args.dataset):
+        print(f"SNAP skipped: {args.dataset} annotates every object "
+              f"under a single category, so there is no name to match "
+              f"against. No snap* columns will be written.\n")
+    else:
+        from laod.metrics.snap import SNAPEvaluator, TextEmbedder
+        sev = SNAPEvaluator(gt, TextEmbedder(device=args.device),
+                            grid=SNAP_LEGACY)
     print(f"{len(gt)} images | {sum(len(g) for g in gt)} objects\n")
 
     rows = []
@@ -98,7 +105,8 @@ def main() -> int:
         for source in SOURCES:
             p = preds_for(recs, source)
             caap = CAAP_V2.summarise(ev.evaluate(p, progress=False).per_threshold)
-            snap = sev.evaluate(p, control=False, progress=False).summary()
+            snap = (sev.evaluate(p, control=False, progress=False).summary()
+                    if sev else None)
             u, t = max_f1(gt, p)
             fx = UAPEvaluator(gt, score_threshold=args.fixed_threshold).evaluate(p)
             nd = sum(len(x.scores) for x in p) / max(len(p), 1)
@@ -106,17 +114,22 @@ def main() -> int:
                 model=model, dataset=args.dataset, subset="none", score_source=source,
                 images=len(recs), caap=round(caap["MACRO"], 4),
                 caap_lo=round(caap["LO"], 4), caap_mi=round(caap["MI"], 4),
-                caap_hi=round(caap["HI"], 4), snap=round(snap["MACRO"], 4),
-                snap_lo=round(snap["LO"], 4), snap_mi=round(snap["MI"], 4),
-                snap_hi=round(snap["HI"], 4), u_ap=round(u.u_ap, 4),
+                caap_hi=round(caap["HI"], 4),
+                **({} if snap is None else dict(
+                    snap=round(snap["MACRO"], 4),
+                    snap_lo=round(snap["LO"], 4),
+                    snap_mi=round(snap["MI"], 4),
+                    snap_hi=round(snap["HI"], 4))),
+                u_ap=round(u.u_ap, 4),
                 u_f1_max=round(u.u_f1, 4), u_pre_max=round(u.u_precision, 4),
                 u_rec_max=round(u.u_recall, 4), u_threshold_max=round(t, 5),
                 u_f1_fixed=round(fx.u_f1, 4), u_pre_fixed=round(fx.u_precision, 4),
                 u_rec_fixed=round(fx.u_recall, 4),
                 fixed_threshold=args.fixed_threshold,
                 det_per_img=round(nd, 2), parse_failures=fails))
+            snap_txt = "SNAP n/a" if snap is None else f"SNAP {snap['MACRO']:.4f}"
             print(f"  {model:<14}{source:<14} CAAP {caap['MACRO']:.4f}  "
-                  f"SNAP {snap['MACRO']:.4f}  U-AP {u.u_ap:.4f}  "
+                  f"{snap_txt}  U-AP {u.u_ap:.4f}  "
                   f"maxF1 {u.u_f1:.3f}  {nd:.1f} det/img", flush=True)
 
     os.makedirs(os.path.dirname(out), exist_ok=True)

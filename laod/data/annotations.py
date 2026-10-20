@@ -19,6 +19,33 @@ logger = logging.getLogger(__name__)
 
 DatasetName = Literal["coco", "lvis", "coco_ood"]
 
+#: Datasets whose ground truth names the objects it annotates.
+#:
+#: COCO-OOD is the exception. It declares a single category -- ``unknow
+#: object``, the dataset's own spelling -- and assigns every instance to it,
+#: because the question it asks is whether an out-of-distribution object was
+#: found at all, not what it was. There is therefore no name to compare a
+#: prediction against.
+_NAMED_DATASETS: frozenset[str] = frozenset({"coco", "lvis"})
+
+
+def has_semantic_labels(dataset: DatasetName | str) -> bool:
+    """Whether a metric that reads ground-truth *names* is defined here.
+
+    CAAP and U-AP match on geometry and are defined on every dataset. SNAP
+    matches on label similarity, and SemLoc-AP requires both, so both are
+    undefined wherever the ground truth carries no real name.
+
+    This is worth stating as a rule rather than leaving to each caller,
+    because the failure is silent and the output looks plausible. Scored
+    against COCO-OOD's ``unknow object`` under CLIP text embeddings, SNAP
+    returned ~0.55 -- a number produced entirely by CLIP's cone effect, whose
+    own label-shuffle control reproduced it to four decimals. Under
+    Sentence-BERT the same cells return a flat 0.0. Neither value measures
+    naming; one merely looks like it does.
+    """
+    return dataset in _NAMED_DATASETS
+
 
 def normalise_category(name: str, dataset: DatasetName) -> str:
     """Make a category name suitable for a text encoder.

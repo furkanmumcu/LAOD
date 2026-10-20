@@ -145,6 +145,48 @@ class GroundingDinoDetector(BaseDetector):
         """Grounding DINO expects lower-cased phrases terminated by periods."""
         return ". ".join(l.lower() for l in labels) + "." if labels else ""
 
+    @staticmethod
+    def _char_ranges(labels: Sequence[str]) -> list[tuple[int, int]]:
+        """Character span of every entry inside ``_as_text(labels)``.
+
+        Computed while the prompt is laid out rather than recovered from it, so
+        it is exact by construction.
+        """
+        out, pos = [], 0
+        for i, l in enumerate(labels):
+            low = l.lower()
+            out.append((pos, pos + len(low)))
+            pos += len(low) + (2 if i < len(labels) - 1 else 1)   # ". " / "."
+        return out
+
+    def _token_owner(self, labels: Sequence[str]) -> np.ndarray:
+        """Map each text-token position to the vocabulary entry that owns it.
+
+        Returns an array of length ``GDINO_MAX_TEXT_TOKENS`` holding an entry
+        index, or -1 for separators, special tokens and padding.
+
+        Ownership is decided by **character offset**, not by splitting the
+        prompt on periods. Splitting is the obvious implementation and it is
+        wrong for any entry that contains a period itself -- an LLM naming
+        'j.p. morgan sign' or 'usopen.org sign' would have that entry shattered
+        into three phantom entries, silently misaligning every later one.
+        """
+        enc = self.processor.tokenizer(
+            self._as_text(labels), truncation=True,
+            max_length=GDINO_MAX_TEXT_TOKENS,
+            return_offsets_mapping=True, return_special_tokens_mask=True)
+        owner = np.full(GDINO_MAX_TEXT_TOKENS, -1, dtype=np.int16)
+        ranges = self._char_ranges(labels)
+        for ti, ((a, b), special) in enumerate(zip(enc["offset_mapping"],
+                                                   enc["special_tokens_mask"])):
+            if ti >= GDINO_MAX_TEXT_TOKENS or special or b <= a:
+                continue
+            for ei, (lo, hi) in enumerate(ranges):
+                if a >= lo and b <= hi:
+                    owner[ti] = ei
+                    break
+        return owner
+
     def _n_tokens(self, labels: Sequence[str]) -> int:
         return len(self.processor.tokenizer(self._as_text(labels))["input_ids"])
 
@@ -167,11 +209,13 @@ class GroundingDinoDetector(BaseDetector):
     def set_labels(self, labels):
         super().set_labels(labels)
         self._chunks = self._chunk(self._labels) if self._labels else []
+        self._owners = [self._token_owner(c) for c in self._chunks]
         if len(self._chunks) > 1:
             logger.debug("%d labels exceed %d tokens; split into %d passes",
                          len(self._labels), GDINO_MAX_TEXT_TOKENS, len(self._chunks))
 
-    def _detect_chunk(self, image, labels: Sequence[str]) -> Detection:
+    def _detect_chunk(self, image, labels: Sequence[str],
+                      owner: np.ndarray | None = None) -> Detection:
         inputs = self.processor(images=image, text=self._as_text(labels),
                                 truncation=True, max_length=GDINO_MAX_TEXT_TOKENS,
                                 return_tensors="pt").to(self.device)
@@ -185,17 +229,64 @@ class GroundingDinoDetector(BaseDetector):
         )[0]
         if len(res["boxes"]) == 0:
             return _empty()
-        raw = res.get("text_labels", res.get("labels", []))
-        return (res["boxes"].cpu().numpy().astype(np.float32),
-                res["scores"].cpu().numpy().astype(np.float32),
-                [self._snap_to_vocabulary(str(l), labels) for l in raw])
+        boxes = res["boxes"].cpu().numpy().astype(np.float32)
+        scores = res["scores"].cpu().numpy().astype(np.float32)
+        names = self._labels_from_spans(outputs, labels, owner, scores)
+        if names is None:
+            raw = res.get("text_labels", res.get("labels", []))
+            names = [self._snap_to_vocabulary(str(l), labels) for l in raw]
+        return boxes, scores, names
+
+    def _labels_from_spans(self, outputs, labels: Sequence[str],
+                           owner: np.ndarray | None,
+                           hf_scores: np.ndarray) -> list[str] | None:
+        """The vocabulary entry each retained box actually grounds to.
+
+        Grounding DINO scores every (query, text-token) pair, and a box's
+        confidence is the maximum over that row. The entry owning the winning
+        token is therefore the entry the box is *about* -- and the score the
+        detector already reports is that entry's score, so nothing about the
+        ranking changes.
+
+        The post-processor does not expose this. It rebuilds a phrase from the
+        tokens above ``text_threshold``, which at our operating point
+        (score 0.03, text 0.30) is usually *no tokens at all*: ~97% of retained
+        boxes come back with an empty name, and multi-token entries that do
+        clear it come back as fragments ('##et' for 'tennis racket'). Reading
+        the owning entry straight off the logits recovers both cases, and
+        returns the caller's exact string rather than a decoded approximation.
+
+        Returns ``None`` if the recomputed score vector does not match the one
+        the post-processor returned, which is the only way the query ordering
+        could have drifted; the caller then falls back to phrase decoding.
+        """
+        if owner is None:
+            return None
+        probs = outputs.logits[0].sigmoid()
+        scores, argmax = probs.max(dim=1)
+        keep = (scores > self.params.get("score_threshold", 0.4)).nonzero().ravel()
+        mine = scores[keep].detach().cpu().numpy().astype(np.float32)
+        if mine.shape != hf_scores.shape or not np.array_equal(mine, hf_scores):
+            logger.warning("span-label alignment failed (%d vs %d boxes); "
+                           "falling back to phrase decoding",
+                           mine.size, hf_scores.size)
+            return None
+        idx = argmax[keep].detach().cpu().numpy()
+        out = []
+        for t in idx:
+            e = int(owner[t]) if t < len(owner) else -1
+            # Measured at 0/55,928 boxes, but a winning token outside every
+            # entry span would have no vocabulary term to name, so say so
+            # rather than inventing one.
+            out.append(labels[e] if 0 <= e < len(labels) else "")
+        return out
 
     def detect(self, image) -> Detection:
         if not self._chunks:
             return _empty()
         boxes, scores, labels = [], [], []
-        for chunk in self._chunks:
-            b, s, l = self._detect_chunk(image, chunk)
+        for chunk, owner in zip(self._chunks, self._owners):
+            b, s, l = self._detect_chunk(image, chunk, owner)
             if len(b):
                 boxes.append(b)
                 scores.append(s)

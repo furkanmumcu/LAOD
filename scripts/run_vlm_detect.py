@@ -35,7 +35,7 @@ import numpy as np
 
 from laod.config import PATHS
 from laod.data import coco_loader
-from laod.data.annotations import load_ground_truth
+from laod.data.annotations import has_semantic_labels, load_ground_truth
 from laod.data.splits import apply_split, load_ablation_subset
 from laod.io.predictions import ImagePredictions
 from laod.io.run_store import ImageRecord, RunConfig, RunStore, file_digest
@@ -168,20 +168,29 @@ def main() -> int:
         return out
 
     ev = CAAPEvaluator(gt, CAAP_ALL)
-    from laod.metrics.snap import SNAPEvaluator, TextEmbedder
-    sev = SNAPEvaluator(gt, TextEmbedder(device=args.device), grid=SNAP_LEGACY)
+    sev = None
+    if not has_semantic_labels(args.dataset):
+        print(f"SNAP skipped: {args.dataset} annotates every object "
+              f"under a single category, so there is no name to match "
+              f"against. No snap* columns will be written.\n")
+    else:
+        from laod.metrics.snap import SNAPEvaluator, TextEmbedder
+        sev = SNAPEvaluator(gt, TextEmbedder(device=args.device),
+                            grid=SNAP_LEGACY)
 
     rows = []
     for src in SOURCES:
         p = preds_for(src)
         caap = ev.evaluate(p, progress=False)
-        snap = sev.evaluate(p, control=False, progress=False).summary()
+        snap = (sev.evaluate(p, control=False, progress=False).summary()
+                if sev else None)
         u_fix = UAPEvaluator(gt, score_threshold=args.fixed_threshold).evaluate(p)
         u_best, t_best = max_f1(gt, p)
         nd = sum(len(x.scores) for x in p) / max(len(p), 1)
         pf = sum(1 for g in gt if byid[g.image_id].parse_flags.get("parse_ok") == 0)
         tag = " <- headline" if src in RANKING.values() else ""
-        print(f"  [{src:<14}] CAAP {caap.macro:.4f} SNAP {snap['MACRO']:.4f} "
+        snap_txt = "SNAP n/a" if snap is None else f"SNAP {snap['MACRO']:.4f}"
+        print(f"  [{src:<14}] CAAP {caap.macro:.4f} {snap_txt} "
               f"U-AP {u_best.u_ap:.4f} | maxF1 {u_best.u_f1:.3f}@{t_best:.3g} "
               f"(P {u_best.u_precision:.3f} R {u_best.u_recall:.3f}) | "
               f"F1@{args.fixed_threshold} {u_fix.u_f1:.3f} | {nd:.1f} det/img{tag}",
@@ -191,8 +200,9 @@ def main() -> int:
             score_source=src, images=len(gt),
             caap=round(caap.macro, 4), caap_lo=round(caap.lo, 4),
             caap_mi=round(caap.mi, 4), caap_hi=round(caap.hi, 4),
-            snap=round(snap["MACRO"], 4), snap_lo=round(snap["LO"], 4),
-            snap_mi=round(snap["MI"], 4), snap_hi=round(snap["HI"], 4),
+            **({} if snap is None else dict(
+                snap=round(snap["MACRO"], 4), snap_lo=round(snap["LO"], 4),
+                snap_mi=round(snap["MI"], 4), snap_hi=round(snap["HI"], 4))),
             u_ap=round(u_best.u_ap, 4),
             u_f1_max=round(u_best.u_f1, 4), u_pre_max=round(u_best.u_precision, 4),
             u_rec_max=round(u_best.u_recall, 4), u_threshold_max=round(t_best, 5),

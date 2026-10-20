@@ -21,6 +21,8 @@ sys.path.insert(0, ".")
 
 import numpy as np
 
+from laod.data.annotations import has_semantic_labels
+
 R, REP = "results", "reports"
 LLM_LABEL = {"gemma3-4b": "Gemma3-4B", "gemma4-e2b": "Gemma4-E2B",
              "gemma4-e4b": "Gemma4-E4B", "gemma4-12b": "Gemma4-12B",
@@ -43,6 +45,26 @@ def rd(path):
             except (TypeError, ValueError):
                 pass
     return rows
+
+
+def semloc_marginals(stage: str):
+    """Mean SemLoc-AP along each threshold axis, averaged over a stage's cells.
+
+    SemLoc-AP has no LO/MI/HI structure -- it is a 10x10 grid, not a sweep of
+    one threshold -- so the analogue of an interval breakdown is the pair of
+    marginals: hold IoU and average over cosine, then the reverse. That is what
+    shows whether a cell is losing points to localisation or to naming.
+    """
+    rows = rd(f"{R}/semloc.csv") or []
+    mats = rd(f"{R}/semloc_matrices.json") or {}
+    runs = [r["run"] for r in rows if r["stage"] == stage]
+    grids = [np.array(mats[k]["matrix"]) for k in runs if k in mats]
+    if not grids:
+        return None
+    entry = mats[next(k for k in runs if k in mats)]
+    m = np.mean(grids, axis=0)
+    return (entry["iou_thresholds"], entry["sem_thresholds"],
+            m.mean(axis=1), m.mean(axis=0), float(m.mean()), len(grids))
 
 
 def merge_sbert(cells, dataset, stage):
@@ -173,18 +195,34 @@ tau = 1.00 matters most for SNAP: it demands near-identical embeddings, scores
         cells = merge_sbert(cells, ds, note)
         A("**CAAP by interval, mean over LLMs**\n")
         A(interval_means(cells, "caap") + "\n")
-        if ds == "coco_ood":
-            A("""**SNAP is not reported for COCO-OOD.** Every object is annotated
-under the single label `unknow object`, so there is nothing to name: the
-shuffled-label control gives a gain of exactly +0.0000 on all 28 cells, under
-any encoder. This dataset is read on U-AP.\n""")
+        if not has_semantic_labels(ds):
+            A("""**SNAP and SemLoc-AP are not defined for COCO-OOD.** Every object
+is annotated under the single label `unknow object`, so there is nothing to
+name: the shuffled-label control gives a gain of exactly +0.0000 on all 28
+cells, under any encoder. The scorers decline to emit the columns rather than
+filling them with zeros. This dataset is read on U-AP.\n""")
         else:
             A("**SNAP by interval, mean over LLMs** (Sentence-BERT)\n")
             A(interval_means(cells, "snap") + "\n")
+        sm = semloc_marginals(note)
+        if sm and has_semantic_labels(ds):
+            ious, taus, by_iou, by_tau, macro, n = sm
+            A(f"**SemLoc-AP marginals, mean over {n} cells** "
+              f"(macro {macro:.4f})\n")
+            A(table(["axis"] + [f"{t:.2f}" for t in ious],
+                    [["hold IoU, mean over τ"] + [f"{v:.4f}" for v in by_iou]]) + "\n")
+            A(table(["axis"] + [f"{t:.2f}" for t in taus],
+                    [["hold τ, mean over IoU"] + [f"{v:.4f}" for v in by_tau]]) + "\n")
+            A("*SemLoc-AP has no LO/MI/HI structure -- it is a 10x10 grid rather "
+              "than a sweep of one threshold -- so these marginals are the "
+              "analogue: the first row shows what localisation strictness costs, "
+              "the second what naming strictness costs. Full per-cell matrices "
+              "are in `reports/SEMLOC.md` and "
+              "`results/semloc_matrices.json`.*\n")
         A("<details><summary>Per-cell CAAP</summary>\n")
         A(cells_table(cells, "caap") + "\n")
         A("</details>\n")
-        if ds != "coco_ood":
+        if has_semantic_labels(ds):
             A("<details><summary>Per-cell SNAP</summary>\n")
             A(cells_table(cells, "snap") + "\n")
             A("</details>\n")
@@ -221,7 +259,7 @@ any encoder. This dataset is read on U-AP.\n""")
             continue
         sbv = {r["llm"]: r for r in (rd(f"{R}/snap_sbert.csv") or [])
                if r["stage"] == "vlm" and r["dataset"] == ds}
-        snap_col = ds != "coco_ood"
+        snap_col = has_semantic_labels(ds)
         rows = []
         for m in ("qwen25-vl-7b", "internvl3-8b"):
             c = next((r for r in v if r["model"] == m
