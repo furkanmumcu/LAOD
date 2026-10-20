@@ -159,9 +159,9 @@ are listed here because this is where the step-2 cells are scored.
 A group whose runs are absent is reported and skipped, so running early costs
 nothing but an incomplete table.
 
-The two shipped `semloc.csv` rows above 72 are `fixed_vocab` cells from an
-appendix experiment whose driver is not in this repository; that group finds
-no runs here and is skipped.
+The last two `semloc.csv` cells are the `fixed_vocab` group, which needs the
+runs from `scripts/run_fixed_vocab.py` (§8). Run that first and all 74
+reproduce; skip it and the group is reported as absent.
 
 ## 4. MLLMs as direct detectors
 
@@ -244,9 +244,69 @@ change: the empty-label rate and how many labels moved. It writes
 two moved.
 
 Ours ships in `results/`: **36 cells, all boxes and scores bit-identical, CAAP
-and U-AP identical on every one.** The script here reproduces 34 of them — the
-other two are fixed-vocabulary cells from an appendix experiment whose driver
-is not in this repository, and the script skips that step when it is absent.
+and U-AP identical on every one.** Two of the 36 are the fixed-vocabulary cells
+from §8; `rerun_gdino_labels.sh` runs that step when `run_fixed_vocab.py` is
+present, which it now is.
+
+## 8. Appendix experiments
+
+Four experiments reported in the appendix. All run in the same environment and
+read the same cached runs; none needs a fresh detector pass except where noted.
+
+### Fixed-ontology reference (Tables 25–28)
+
+Every image queried with the **complete** benchmark ontology — all 80 COCO
+categories, all 1,203 LVIS categories — instead of an MLLM-generated
+vocabulary, across all four detectors.
+
+```bash
+bash scripts/run_fixed_ontology.sh          # detector pass, full ontology per image
+python scripts/eval_fixed_ontology.py       # -> results/fixed_ontology/
+```
+
+This is a **reference point, not an upper bound.** Supplying the ontology
+removes the naming problem but adds 80 or 1,203 competing phrases to every
+query, which costs localisation. Table 27 reports the difference in both
+directions.
+
+### Vocabulary-level refinement, and whether it helps (Tables 19–20)
+
+The detector's per-concept support is summarised back to the MLLM, which
+revises the **vocabulary**; the detector then re-grounds the revised list. The
+MLLM never sees or emits a coordinate. Implemented in `laod/feedback/`.
+
+```bash
+python scripts/make_feedback_baseline.py    # matched one-pass baseline
+bash   scripts/run_feedback_dev.sh          # four conditions, 500-image holdout
+python scripts/eval_vocab_feedback.py       # -> results/feedback_dev/
+python scripts/build_feedback_report.py
+```
+
+Refinement applied unconditionally does not help. Gating it on first-pass
+detector confidence — refine only the images the detector is least sure about —
+is the selective variant:
+
+```bash
+python scripts/selective_refinement.py          # gate, rate curves
+python scripts/selective_refinement_control.py  # 1,000 random gates at the same rate
+python scripts/selective_refinement_analysis.py
+python scripts/selective_refinement_appendix.py # -> results/selective_refinement/
+```
+
+The control matters more than the result. A random gate at the same refinement
+rate is the thing the confidence gate has to beat, and `selective_refinement_
+control.py` draws 1,000 of them: Table 20 reports where the confidence gate
+falls in that distribution rather than asserting it is better.
+
+The feedback loop runs the MLLM a second time, so unlike every other script in
+this section it is **not** an offline pass.
+
+### Fixed-vocabulary probe
+
+`results/fixed_vocab_coco.csv` is an internal two-row probe — Grounding DINO
+only, COCO-80 as the prompt — that preceded the fixed-ontology experiment above
+and is superseded by it. It ships because `scripts/eval_fixed_vocab.py` reads
+it, not because it backs a table in the paper.
 
 ## Cost
 

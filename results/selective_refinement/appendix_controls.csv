@@ -1,0 +1,10 @@
+config,metric,low,high,rand_mean,rand_std,rand_p2_5,rand_p97_5,low_percentile,ordering_low_rand_high
+qwen35-9b + yolo-world,CAAP,0.28443,0.28005,0.28064,0.0015,0.27784,0.28382,99.2,True
+qwen35-9b + yolo-world,SNAP,0.30764,0.29703,0.30002,0.00281,0.29489,0.30556,99.5,True
+qwen35-9b + yolo-world,SemLoc,0.17593,0.17115,0.17233,0.00147,0.16954,0.17526,99.1,True
+gemma4-e4b + yolo-world,CAAP,0.2777,0.2712,0.27554,0.00182,0.27221,0.27932,88.0,True
+gemma4-e4b + yolo-world,SNAP,0.29453,0.2852,0.29055,0.00246,0.28566,0.29527,95.2,True
+gemma4-e4b + yolo-world,SemLoc,0.17822,0.17064,0.17521,0.00168,0.1719,0.17835,97.1,True
+qwen35-9b + owlv2-base,CAAP,0.20802,0.20742,0.20755,0.00081,0.20594,0.20918,72.6,True
+qwen35-9b + owlv2-base,SNAP,0.21273,0.215,0.21463,0.00116,0.21247,0.21699,4.4,False
+qwen35-9b + owlv2-base,SemLoc,0.11595,0.11714,0.1169,0.00057,0.11586,0.11808,4.1,False

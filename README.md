@@ -23,7 +23,7 @@ git clone https://github.com/furkanmumcu/LAOD.git && cd LAOD
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # add HF_TOKEN only if you use gated models
-pytest tests/ -q              # 130 pass; 3 skip until data is provisioned
+pytest tests/ -q              # 145 pass; 3 skip until data is provisioned
 ```
 
 A CUDA GPU is required for the model passes. Gemma4-12B needs ~22 GB; the rest
@@ -94,6 +94,9 @@ maps to one command:
 | Tables 4–5 — prompt sensitivity | `--prompt default\|minimal\|coco-specific`, and `scripts/run_lvis_prompt_ablation.sh` |
 | Fig. 6 — qualitative | `scripts/pick_qualitative.py`, then the two render scripts |
 | Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) |
+| Tables 19–20 — refinement loop and its controls | `scripts/run_vocab_feedback.py`, then `scripts/selective_refinement*.py` |
+| Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` |
+| Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh`, then `scripts/eval_fixed_ontology.py` |
 
 The `results/` directory ships the frozen split id lists and our own output
 tables, so you can diff your numbers against ours rather than only hoping they
@@ -176,13 +179,19 @@ it to four decimals.
 ```
 laod/            the package: metrics, data, models, IO, visualisation
 scripts/         tuning, scoring, report and figure generation
-tests/           133 tests
+tests/           148 tests
 results/         frozen splits + our output tables
 run_benchmark.py       generate vocabularies and ground them
 eval_metrics_only.py   score an existing prediction file
 LABEL_AUDIT.md         how each detector associates a box to a vocabulary entry
 GENERATEU.md           rebuilding the external GenerateU baseline
 ```
+
+`laod/feedback/` holds the vocabulary-revision loop: the detector's per-concept
+support is summarised back to the MLLM, which rewrites the **vocabulary** and
+the detector re-grounds it. The MLLM never sees or emits a coordinate. It is
+reported in the appendix as a negative result — see
+[REPRODUCE.md](REPRODUCE.md) §8.
 
 ## Citation
 

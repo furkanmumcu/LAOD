@@ -1,0 +1,13 @@
+config,group,n,mean_smax,median_smax
+qwen35-9b + yolo-world,helped,61,0.8341,0.8801
+qwen35-9b + yolo-world,hurt,39,0.8272,0.8683
+qwen35-9b + yolo-world,unchanged,400,0.8383,0.9009
+qwen35-9b + yolo-world,"corr(s_max, dTP)",500,-0.0758,0.0229
+gemma4-e4b + yolo-world,helped,45,0.7315,0.8033
+gemma4-e4b + yolo-world,hurt,69,0.821,0.919
+gemma4-e4b + yolo-world,unchanged,386,0.8178,0.9157
+gemma4-e4b + yolo-world,"corr(s_max, dTP)",500,0.0072,-0.1842
+qwen35-9b + owlv2-base,helped,36,0.6198,0.6046
+qwen35-9b + owlv2-base,hurt,46,0.6058,0.6106
+qwen35-9b + owlv2-base,unchanged,418,0.675,0.6707
+qwen35-9b + owlv2-base,"corr(s_max, dTP)",500,0.0257,0.0782

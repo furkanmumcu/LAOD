@@ -20,7 +20,7 @@ for PROMPT in $PROMPTS; do
     echo "=== $(date +%H:%M:%S) prompt=$PROMPT ==="
     $PY run_benchmark.py --dataset lvis --split test --subset ablation \
         --llm $LLMS --detector yolo-world --prompt "$PROMPT" \
-        --detector_preset v2 --device "$DEV" --batch_size 8 \
+        --device "$DEV" --batch_size 8 \
         || { echo "FAILED on $PROMPT"; exit 1; }
 done
 echo "=== $(date +%H:%M:%S) scoring ==="

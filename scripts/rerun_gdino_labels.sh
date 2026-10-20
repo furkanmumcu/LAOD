@@ -28,18 +28,17 @@ step () {                       # step <name> <args...>
 }
 
 step coco "$PY" run_benchmark.py --dataset coco --split test --stage detect \
-     --no_resume --llm $LLMS7 --detector $GD --detector_preset v2 \
+     --no_resume --llm $LLMS7 --detector $GD \
      --device "$DEV" --output_root "$OUT" || exit 1
 step lvis "$PY" run_benchmark.py --dataset lvis --split test --stage detect \
-     --no_resume --llm $LLMS3 --detector $GD --detector_preset v2 \
+     --no_resume --llm $LLMS3 --detector $GD \
      --device "$DEV" --output_root "$OUT" || exit 1
 step coco_ood "$PY" run_benchmark.py --dataset coco_ood --split test --stage detect \
-     --no_resume --llm $LLMS7 --detector $GD --detector_preset v2 \
+     --no_resume --llm $LLMS7 --detector $GD \
      --device "$DEV" --output_root "$OUT" || exit 1
-# The fixed-vocabulary cells belong to an appendix experiment whose driver is
-# not part of this repository. results/relabel_verification.csv therefore has
-# 36 rows where this script produces 34; the two extra are those cells, and
-# they are bit-identical like the rest.
+# The fixed-vocabulary cells (appendix, REPRODUCE.md section 8) account for 2
+# of the 36 rows in results/relabel_verification.csv. Guarded rather than
+# assumed, so the script still completes if that experiment is removed.
 if [ -f scripts/run_fixed_vocab.py ]; then
   step fixed80 "$PY" scripts/run_fixed_vocab.py --dataset coco --detector $GD \
        --split test --device "$DEV" --output_root "$OUT" || exit 1

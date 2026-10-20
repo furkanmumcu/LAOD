@@ -1,0 +1,13 @@
+config,llm,detector,condition,images,det_per_img,caap,snap,semloc,vocab_per_img
+qwen35-9b+yolo-world,qwen35-9b,yolo-world,baseline,500,92.04,0.2809,0.2957,0.1712,7.75
+qwen35-9b+yolo-world,qwen35-9b,yolo-world,selfreflect,500,100.41,0.2794,0.297,0.1715,8.79
+qwen35-9b+yolo-world,qwen35-9b,yolo-world,feedback_refine,500,88.29,0.2773,0.2905,0.1685,6.99
+qwen35-9b+yolo-world,qwen35-9b,yolo-world,feedback_full,500,96.55,0.2807,0.303,0.173,8.26
+gemma4-e4b+yolo-world,gemma4-e4b,yolo-world,baseline,500,56.99,0.278,0.2898,0.1741,4.47
+gemma4-e4b+yolo-world,gemma4-e4b,yolo-world,selfreflect,500,52.55,0.2618,0.2432,0.1491,4.33
+gemma4-e4b+yolo-world,gemma4-e4b,yolo-world,feedback_refine,500,51.83,0.2709,0.2811,0.1692,3.52
+gemma4-e4b+yolo-world,gemma4-e4b,yolo-world,feedback_full,500,54.1,0.274,0.291,0.176,3.93
+qwen35-9b+owlv2-base,qwen35-9b,owlv2-base,baseline,500,363.65,0.2086,0.2198,0.1199,7.75
+qwen35-9b+owlv2-base,qwen35-9b,owlv2-base,selfreflect,500,382.94,0.2018,0.2072,0.114,8.79
+qwen35-9b+owlv2-base,qwen35-9b,owlv2-base,feedback_refine,500,355.09,0.2083,0.2169,0.1191,7.3
+qwen35-9b+owlv2-base,qwen35-9b,owlv2-base,feedback_full,500,380.25,0.2068,0.2114,0.115,8.8

@@ -1,0 +1,39 @@
+{
+ "coco": {
+  "split": "test",
+  "images": 4500,
+  "gt_objects": 32814,
+  "vocabulary": "COCO-80",
+  "vocab_size": 80,
+  "vocab_source": "coco annotation 'categories', sorted by id",
+  "normalisation": "laod.data.annotations.normalise_category (LVIS underscores -> spaces; COCO unchanged)"
+ },
+ "lvis": {
+  "split": "test",
+  "images": 4327,
+  "gt_objects": 45063,
+  "vocabulary": "LVIS-1203",
+  "vocab_size": 1203,
+  "vocab_source": "lvis annotation 'categories', sorted by id",
+  "normalisation": "laod.data.annotations.normalise_category (LVIS underscores -> spaces; COCO unchanged)"
+ },
+ "max_dets": 100,
+ "detector_thresholds": {
+  "yolo-world": {
+   "conf": 0.001
+  },
+  "owlv2-base": {
+   "score_threshold": 0.01
+  },
+  "gdino-tiny": {
+   "score_threshold": 0.03,
+   "text_threshold": 0.3
+  },
+  "gdino-base": {
+   "score_threshold": 0.03,
+   "text_threshold": 0.3
+  }
+ },
+ "evaluators": "CAAP_V2 / SNAP_DISJOINT (SBERT all-MiniLM-L6-v2, bare labels) / SemLoc-AP 10x10 Cartesian, all at maxDets=100",
+ "note": "maxDets applied once after merging all Grounding DINO text chunks"
+}

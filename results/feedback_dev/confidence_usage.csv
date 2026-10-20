@@ -1,0 +1,10 @@
+config,condition,n_removed,n_kept,mean_maxconf_removed,mean_maxconf_kept,median_maxconf_removed,median_maxconf_kept
+qwen35-9b+yolo-world,selfreflect,318,3555,0.238,0.335,0.1136,0.201
+qwen35-9b+yolo-world,feedback_refine,416,3457,0.0791,0.3569,0.0055,0.2478
+qwen35-9b+yolo-world,feedback_full,510,3363,0.0923,0.3626,0.0081,0.258
+gemma4-e4b+yolo-world,selfreflect,775,1460,0.3489,0.3851,0.1931,0.2317
+gemma4-e4b+yolo-world,feedback_refine,480,1755,0.0662,0.4564,0.009,0.4489
+gemma4-e4b+yolo-world,feedback_full,765,1470,0.1035,0.5126,0.0129,0.5626
+qwen35-9b+owlv2-base,selfreflect,318,3555,0.3323,0.3965,0.321,0.3828
+qwen35-9b+owlv2-base,feedback_refine,236,3637,0.2435,0.4009,0.2153,0.3865
+qwen35-9b+owlv2-base,feedback_full,272,3601,0.2541,0.4016,0.2435,0.3879

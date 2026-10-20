@@ -1,0 +1,3 @@
+config,threshold,fired,fired_pct,caap,snap,semloc,d_caap,d_snap,d_semloc
+qwen35-9b + yolo-world,0.917,300,60.0,0.2844,0.3076,0.1759,0.0036,0.0119,0.0047
+gemma4-e4b + yolo-world,0.917,262,52.4,0.2795,0.295,0.1788,0.0015,0.0052,0.0046

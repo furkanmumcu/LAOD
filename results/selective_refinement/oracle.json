@@ -1,0 +1,7 @@
+{
+ "refined_pct": 12.2,
+ "caap": 0.2888,
+ "snap": 0.3169,
+ "semloc": 0.182,
+ "note": "diagnostic upper bound; uses ground truth; NOT a method"
+}
