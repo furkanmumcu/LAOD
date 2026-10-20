@@ -79,10 +79,8 @@ can be inspected or re-scored without re-running anything.
 See **[REPRODUCE.md](REPRODUCE.md)** for the full protocol. Each paper result
 maps to one command:
 
-**This repository produces numbers, not plots.** The paper's grid figures
-(Figs. 3–5) are a rendering of one value per MLLM x detector cell; those values
-are what the commands below write, as CSV and as markdown grid tables. No
-plotting or image-rendering code ships here.
+**This repository produces numbers, not plots.** No plotting or
+image-rendering code ships here.
 
 | paper | command | output |
 |---|---|---|
@@ -99,11 +97,17 @@ plotting or image-rendering code ships here.
 | Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh` then `scripts/eval_fixed_ontology.py` | `results/fixed_ontology/` |
 | Table 3 — GenerateU comparison | external baseline, see [GENERATEU.md](GENERATEU.md) | — |
 
-The paper's qualitative figures (Figs. 6, 8) are rendered images, not
-measurements; the predictions behind them are in the run directories.
-| Tables 19–20 — refinement loop and its controls | `scripts/run_vocab_feedback.py`, then `scripts/selective_refinement*.py` |
-| Table 23 — confidence-threshold sweep | `scripts/threshold_cost.py` |
-| Tables 25–28 — fixed-ontology reference | `scripts/run_fixed_ontology.sh`, then `scripts/eval_fixed_ontology.py` |
+Figures 3-5 are heatmaps over the MLLM x detector grid - one value per cell,
+colour standing in for a number. The commands above write those numbers
+directly, one row per cell:
+
+- Fig. 3, CAAP and SNAP on COCO-Val - 28 cells - `results/main_coco.csv`
+- Fig. 4, CAAP, SNAP and SemLoc-AP on LVIS-minival - 12 cells -
+  `results/main_lvis.csv` and `results/semloc.csv`
+- Fig. 5, CAAP on COCO-OOD - 28 cells - `results/main_coco_ood.csv`
+
+`scripts/build_final_report.py` additionally lays each one out as a markdown
+grid table, MLLMs down and detectors across, in the same shape as the figure.
 
 The `results/` directory ships the frozen split id lists and our own output
 tables, so you can diff your numbers against ours rather than only hoping they
