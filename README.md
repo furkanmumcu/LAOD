@@ -1,4 +1,5 @@
 <h1 align="center">
+  <img width="150" alt="LAOD" src="assets/laod.svg"><br>
   <img width="760"
        alt="MLLM-Guided Autonomous Object Detection for Open-World Understanding"
        src="assets/title.svg">
